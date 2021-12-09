@@ -1,1 +1,1 @@
-# ERC1238-token
+# [ERC1238] Non-transferable Tokens (NTTs/badges)
