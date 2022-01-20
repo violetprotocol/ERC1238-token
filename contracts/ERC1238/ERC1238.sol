@@ -18,7 +18,8 @@ contract ERC1238 is IERC1238 {
 
     // TODO: Add a mapping returning the number of tokens in circulation by id?
 
-    // Used as the URI by default for all token types by relying on ID substitution, e.g. https://token-cdn-domain/{id}.json
+    // Used as the URI by default for all token types by relying on ID substitution,
+    // e.g. https://token-cdn-domain/{id}.json
     string private baseURI;
 
     /**
@@ -28,11 +29,10 @@ contract ERC1238 is IERC1238 {
         _setBaseURI(baseURI_);
     }
 
-
     // TODO: Add support for ERC165
     // function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
     //     return
-    //        
+    //
     // }
 
     /**
@@ -85,7 +85,6 @@ contract ERC1238 is IERC1238 {
 
         return batchBalances;
     }
-
 
     /**
      * @dev Sets a new URI for all token types, by relying on the token type ID
@@ -215,7 +214,6 @@ contract ERC1238 is IERC1238 {
 
         address burner = msg.sender;
 
-
         for (uint256 i = 0; i < ids.length; i++) {
             uint256 id = ids[i];
             uint256 amount = amounts[i];
@@ -240,16 +238,14 @@ contract ERC1238 is IERC1238 {
         bytes memory data
     ) internal virtual {}
 
-
-     function _beforeBurn(
+    function _beforeBurn(
         address burner,
         address from,
         uint256 id,
         uint256 amount
     ) internal virtual {}
 
-
-     function _doSafeMintAcceptanceCheck(
+    function _doSafeMintAcceptanceCheck(
         address minter,
         address to,
         uint256 id,
@@ -277,9 +273,7 @@ contract ERC1238 is IERC1238 {
         bytes memory data
     ) internal {
         if (to.isContract()) {
-            try IERC1238Receiver(to).onERC1238BatchMint(minter, ids, amounts, data) returns (
-                bytes4 response
-            ) {
+            try IERC1238Receiver(to).onERC1238BatchMint(minter, ids, amounts, data) returns (bytes4 response) {
                 if (response != IERC1238Receiver.onERC1238BatchMint.selector) {
                     revert("ERC1238: ERC1238Receiver rejected tokens");
                 }
