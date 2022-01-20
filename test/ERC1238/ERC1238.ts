@@ -8,7 +8,7 @@ import { toBN, ZERO_ADDRESS } from "../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
 
-describe("Unit tests", function () {
+describe("ERC1238", function () {
   let erc1238Mock: ERC1238Mock;
   let admin: SignerWithAddress;
   let tokenRecipient: SignerWithAddress;
@@ -26,7 +26,7 @@ describe("Unit tests", function () {
     erc1238Mock = <ERC1238Mock>await waffle.deployContract(admin, ERC1238MockArtifact, [BASE_URI]);
   });
 
-  describe("internal function", () => {
+  describe("internal functions", () => {
     const data = "0x12345678";
     const tokenId = toBN("11223344");
     const mintAmount = toBN("58319");

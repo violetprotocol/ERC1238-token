@@ -9,7 +9,7 @@ import { toBN } from "../utils/test-utils";
 const BASE_URI = "https://token-cdn-domain/{id}.json";
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-describe("Unit tests", function () {
+describe("Badge", function () {
   let badge: Badge;
   let admin: SignerWithAddress;
   let signer1: SignerWithAddress;
