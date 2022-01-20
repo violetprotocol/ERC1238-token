@@ -1,11 +1,8 @@
 {
-  "name": "@paulrberg/solidity-template",
-  "description": "Template for writing Solidity smart contracts",
+  "name": "@violetprotocol/ERC1238-token",
+  "description": "ERC1238 Non-transferable token implementations",
   "version": "1.0.0",
-  "author": {
-    "name": "Paul Razvan Berg",
-    "url": "https://paulrberg.com"
-  },
+  "author": "",
   "devDependencies": {
     "@codechecks/client": "^0.1.12",
     "@commitlint/cli": "^14.1.0",
@@ -62,7 +59,9 @@
     "ethereum",
     "hardhat",
     "smart-contracts",
-    "solidity"
+    "solidity",
+    "NFT",
+    "ERC1238"
   ],
   "publishConfig": {
     "access": "public"
