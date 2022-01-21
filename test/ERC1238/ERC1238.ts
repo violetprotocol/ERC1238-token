@@ -190,5 +190,29 @@ describe("ERC1238", function () {
           .withArgs(admin.address, tokenRecipient.address, tokenBatchIds, burnBatchAmounts);
       });
     });
+
+    /*
+     * URI
+     */
+
+    describe("URI", () => {
+      it("should set the base URI during construction", async () => {
+        expect(await erc1238Mock.baseURI()).to.eq(BASE_URI);
+      });
+
+      it("should set a new base URI", async () => {
+        const newBaseURI = "https://token-cdn-domain/v2/{id}.json";
+
+        await erc1238Mock.setBaseURI(newBaseURI);
+
+        expect(await erc1238Mock.baseURI()).to.eq(newBaseURI);
+      });
+
+      it("should set an empty base URI", async () => {
+        await erc1238Mock.setBaseURI("");
+
+        expect(await erc1238Mock.baseURI()).to.eq("");
+      });
+    });
   });
 });

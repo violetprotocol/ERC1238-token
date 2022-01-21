@@ -11,6 +11,10 @@ import "../ERC1238/ERC1238.sol";
 contract ERC1238Mock is ERC1238 {
     constructor(string memory uri) ERC1238(uri) {}
 
+    function baseURI() public view returns (string memory) {
+        return _baseURI();
+    }
+
     function setBaseURI(string memory newURI) public {
         _setBaseURI(newURI);
     }
