@@ -7,6 +7,7 @@ import type { ERC1238URIStorageMock } from "../../../src/types/ERC1238URIStorage
 import { toBN, ZERO_ADDRESS } from "../../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
+const EMPTY_URI = "";
 
 describe("ERC1238URIStorage", function () {
   let erc1238UriMock: ERC1238URIStorageMock;
@@ -31,7 +32,7 @@ describe("ERC1238URIStorage", function () {
     const tokenId = toBN("11223344");
     const tokenURI = "https://token-cdn-domain/event/exclusive-pass/69";
     const mintAmount = toBN("58319");
-    // const burnAmount = toBN("987");
+    const burnAmount = toBN("987");
 
     const tokenBatchIds = [toBN("2000"), toBN("2010"), toBN("2020")];
     const tokenBatchURIs = [
@@ -40,7 +41,7 @@ describe("ERC1238URIStorage", function () {
       "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiw",
     ];
     const mintBatchAmounts = [toBN("5000"), toBN("10000"), toBN("42195")];
-    // const burnBatchAmounts = [toBN("5000"), toBN("9001"), toBN("195")];
+    const burnBatchAmounts = [toBN("5000"), toBN("9001"), toBN("195")];
 
     /*
      * URI
@@ -154,7 +155,7 @@ describe("ERC1238URIStorage", function () {
         ).to.be.revertedWith("ERC1238: mint to the zero address");
       });
 
-      it("should revert if the length of inputs do not match", async () => {
+      it("should revert if the length of ids and amounts do not match", async () => {
         await expect(
           erc1238UriMock
             .connect(admin)
@@ -178,6 +179,32 @@ describe("ERC1238URIStorage", function () {
               data,
             ),
         ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
+      });
+
+      it("should revert if the length of ids and uris do not match", async () => {
+        await expect(
+          erc1238UriMock
+            .connect(admin)
+            .mintBatchWithURI(
+              tokenBatchRecipient.address,
+              tokenBatchIds,
+              mintBatchAmounts,
+              tokenBatchURIs.slice(1),
+              data,
+            ),
+        ).to.be.revertedWith("ERC1238: ids and URIs length mismatch");
+
+        await expect(
+          erc1238UriMock
+            .connect(admin)
+            .mintBatchWithURI(
+              tokenBatchRecipient.address,
+              tokenBatchIds.slice(1),
+              mintBatchAmounts.slice(1),
+              tokenBatchURIs,
+              data,
+            ),
+        ).to.be.revertedWith("ERC1238: ids and URIs length mismatch");
       });
 
       it("should credit the minted tokens", async () => {
@@ -234,97 +261,142 @@ describe("ERC1238URIStorage", function () {
      * BURNING
      */
 
-    // describe("_burn", () => {
-    //   it("should revert when buring the zero account's token", async () => {
-    //     await expect(erc1238UriMock.connect(admin).burn(ZERO_ADDRESS, tokenId, burnAmount)).to.be.revertedWith(
-    //       "ERC1238: burn from the zero address",
-    //     );
-    //   });
+    describe("_burnAndDeleteURI", () => {
+      it("should revert when burning the zero account's token", async () => {
+        await expect(
+          erc1238UriMock.connect(admin).burnAndDeleteURI(ZERO_ADDRESS, tokenId, burnAmount),
+        ).to.be.revertedWith("ERC1238: burn from the zero address");
+      });
 
-    //   it("should revert when buring a non-existent token id", async () => {
-    //     await expect(
-    //       erc1238UriMock.connect(admin).burn(tokenRecipient.address, tokenId, burnAmount),
-    //     ).to.be.revertedWith("ERC1238: burn amount exceeds balance");
-    //   });
+      it("should revert when burning a non-existent token id", async () => {
+        await expect(
+          erc1238UriMock.connect(admin).burnAndDeleteURI(tokenRecipient.address, tokenId, burnAmount),
+        ).to.be.revertedWith("ERC1238: burn amount exceeds balance");
+      });
 
-    //   it("should revert when buring more than available balance", async () => {
-    //     const amountToMint = burnAmount.sub(1);
-    //     await erc1238UriMock.mint(tokenRecipient.address, tokenId, amountToMint, data);
+      it("should revert when burning more than available balance", async () => {
+        const amountToMint = burnAmount.sub(1);
+        await erc1238UriMock.mintWithURI(tokenRecipient.address, tokenId, amountToMint, tokenURI, data);
+        await expect(
+          erc1238UriMock.connect(admin).burnAndDeleteURI(tokenRecipient.address, tokenId, burnAmount),
+        ).to.be.revertedWith("ERC1238: burn amount exceeds balance");
+      });
 
-    //     await expect(
-    //       erc1238UriMock.connect(admin).burn(tokenRecipient.address, tokenId, burnAmount),
-    //     ).to.be.revertedWith("ERC1238: burn amount exceeds balance");
-    //   });
+      it("should burn the right amount of tokens", async () => {
+        const amountToMint = burnAmount.add(1);
+        await erc1238UriMock.mintWithURI(tokenRecipient.address, tokenId, amountToMint, tokenURI, data);
+        await erc1238UriMock.connect(admin).burnAndDeleteURI(tokenRecipient.address, tokenId, burnAmount);
+        expect(await erc1238UriMock.balanceOf(tokenRecipient.address, tokenId)).to.eq(1);
+      });
 
-    //   it("should burn the right amount of tokens", async () => {
-    //     const amountToMint = burnAmount.add(1);
+      it("should emit a BurnSingle event", async () => {
+        await erc1238UriMock.mintWithURI(tokenRecipient.address, tokenId, burnAmount, tokenURI, data);
+        await expect(erc1238UriMock.burnAndDeleteURI(tokenRecipient.address, tokenId, burnAmount))
+          .to.emit(erc1238UriMock, "BurnSingle")
+          .withArgs(admin.address, tokenRecipient.address, tokenId, burnAmount);
+      });
 
-    //     await erc1238UriMock.mint(tokenRecipient.address, tokenId, amountToMint, data);
+      it("should delete any token URI set", async () => {
+        await erc1238UriMock.mintWithURI(tokenRecipient.address, tokenId, mintAmount, tokenURI, data);
 
-    //     await erc1238UriMock.connect(admin).burn(tokenRecipient.address, tokenId, burnAmount);
+        await erc1238UriMock.connect(admin).burnAndDeleteURI(tokenRecipient.address, tokenId, mintAmount);
 
-    //     expect(await erc1238UriMock.balanceOf(tokenRecipient.address, tokenId)).to.eq(1);
-    //   });
+        expect(await erc1238UriMock.tokenURI(tokenId)).to.eq(BASE_URI);
+      });
 
-    //   it("should emit a BurnSingle event", async () => {
-    //     await erc1238UriMock.mint(tokenRecipient.address, tokenId, burnAmount, data);
+      it("should do nothing if the a token URI was not set", async () => {
+        await erc1238UriMock.mintWithURI(tokenRecipient.address, tokenId, mintAmount, EMPTY_URI, data);
 
-    //     await expect(erc1238UriMock.burn(tokenRecipient.address, tokenId, burnAmount))
-    //       .to.emit(erc1238UriMock, "BurnSingle")
-    //       .withArgs(admin.address, tokenRecipient.address, tokenId, burnAmount);
-    //   });
-    // });
+        await erc1238UriMock.connect(admin).burnAndDeleteURI(tokenRecipient.address, tokenId, mintAmount);
 
-    // describe("_burnBatch", () => {
-    //   it("should revert when buring the zero account's token", async () => {
-    //     await expect(
-    //       erc1238UriMock.connect(admin).burnBatch(ZERO_ADDRESS, tokenBatchIds, burnBatchAmounts),
-    //     ).to.be.revertedWith("ERC1238: burn from the zero address");
-    //   });
+        expect(await erc1238UriMock.tokenURI(tokenId)).to.eq(BASE_URI);
+      });
+    });
 
-    //   it("should revert if the length of inputs do not match", async () => {
-    //     await expect(
-    //       erc1238UriMock
-    //         .connect(admin)
-    //         .burnBatch(tokenBatchRecipient.address, tokenBatchIds.slice(1), burnBatchAmounts),
-    //     ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
+    describe("_burnBatchAndDeleteURIs", () => {
+      it("should revert when burning the zero account's token", async () => {
+        await expect(
+          erc1238UriMock.connect(admin).burnBatchAndDeleteURIs(ZERO_ADDRESS, tokenBatchIds, burnBatchAmounts),
+        ).to.be.revertedWith("ERC1238: burn from the zero address");
+      });
 
-    //     await expect(
-    //       erc1238UriMock
-    //         .connect(admin)
-    //         .burnBatch(tokenBatchRecipient.address, tokenBatchIds, burnBatchAmounts.slice(1)),
-    //     ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
-    //   });
+      it("should revert if the length of inputs do not match", async () => {
+        await expect(
+          erc1238UriMock
+            .connect(admin)
+            .burnBatchAndDeleteURIs(tokenBatchRecipient.address, tokenBatchIds.slice(1), burnBatchAmounts),
+        ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
 
-    //   it("should revert when burning a non-existent token id", async () => {
-    //     await erc1238UriMock
-    //       .connect(admin)
-    //       .mintBatch(tokenRecipient.address, tokenBatchIds.slice(1), burnBatchAmounts.slice(1), data);
+        await expect(
+          erc1238UriMock
+            .connect(admin)
+            .burnBatchAndDeleteURIs(tokenBatchRecipient.address, tokenBatchIds, burnBatchAmounts.slice(1)),
+        ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
+      });
 
-    //     await expect(
-    //       erc1238UriMock.connect(admin).burnBatch(tokenRecipient.address, tokenBatchIds, burnBatchAmounts),
-    //     ).to.be.revertedWith("ERC1238: burn amount exceeds balance");
-    //   });
+      it("should revert when burning a non-existent token id", async () => {
+        await erc1238UriMock
+          .connect(admin)
+          .mintBatchWithURI(
+            tokenRecipient.address,
+            tokenBatchIds.slice(1),
+            burnBatchAmounts.slice(1),
+            tokenBatchURIs.slice(1),
+            data,
+          );
 
-    //   it("should properly burn tokens", async () => {
-    //     await erc1238UriMock.connect(admin).mintBatch(tokenRecipient.address, tokenBatchIds, mintBatchAmounts, data);
+        await expect(
+          erc1238UriMock.connect(admin).burnBatchAndDeleteURIs(tokenRecipient.address, tokenBatchIds, burnBatchAmounts),
+        ).to.be.revertedWith("ERC1238: burn amount exceeds balance");
+      });
 
-    //     await erc1238UriMock.connect(admin).burnBatch(tokenRecipient.address, tokenBatchIds, burnBatchAmounts);
+      it("should properly burn tokens", async () => {
+        await erc1238UriMock
+          .connect(admin)
+          .mintBatchWithURI(tokenRecipient.address, tokenBatchIds, mintBatchAmounts, tokenBatchURIs, data);
 
-    //     tokenBatchIds.forEach(async (tokenId, i) =>
-    //       expect(await erc1238UriMock.balanceOf(tokenRecipient.address, tokenId)).to.eq(
-    //         mintBatchAmounts[i].sub(burnBatchAmounts[i]),
-    //       ),
-    //     );
-    //   });
+        await erc1238UriMock
+          .connect(admin)
+          .burnBatchAndDeleteURIs(tokenRecipient.address, tokenBatchIds, burnBatchAmounts);
 
-    //   it("should emit a BurnBatch event", async () => {
-    //     await erc1238UriMock.mintBatch(tokenRecipient.address, tokenBatchIds, mintBatchAmounts, data);
+        tokenBatchIds.forEach(async (tokenId, i) =>
+          expect(await erc1238UriMock.balanceOf(tokenRecipient.address, tokenId)).to.eq(
+            mintBatchAmounts[i].sub(burnBatchAmounts[i]),
+          ),
+        );
+      });
 
-    //     await expect(erc1238UriMock.burnBatch(tokenRecipient.address, tokenBatchIds, burnBatchAmounts))
-    //       .to.emit(erc1238UriMock, "BurnBatch")
-    //       .withArgs(admin.address, tokenRecipient.address, tokenBatchIds, burnBatchAmounts);
-    //   });
-    // });
+      it("should emit a BurnBatch event", async () => {
+        await erc1238UriMock.mintBatchWithURI(
+          tokenRecipient.address,
+          tokenBatchIds,
+          mintBatchAmounts,
+          tokenBatchURIs,
+          data,
+        );
+
+        await expect(erc1238UriMock.burnBatchAndDeleteURIs(tokenRecipient.address, tokenBatchIds, burnBatchAmounts))
+          .to.emit(erc1238UriMock, "BurnBatch")
+          .withArgs(admin.address, tokenRecipient.address, tokenBatchIds, burnBatchAmounts);
+      });
+
+      it("should delete all token URIs", async () => {
+        await erc1238UriMock.mintBatchWithURI(
+          tokenRecipient.address,
+          tokenBatchIds,
+          mintBatchAmounts,
+          tokenBatchURIs,
+          data,
+        );
+
+        await erc1238UriMock
+          .connect(admin)
+          .burnBatchAndDeleteURIs(tokenRecipient.address, tokenBatchIds, burnBatchAmounts);
+
+        tokenBatchIds.forEach(async id => {
+          expect(await erc1238UriMock.tokenURI(id)).to.eq(BASE_URI);
+        });
+      });
+    });
   });
 });

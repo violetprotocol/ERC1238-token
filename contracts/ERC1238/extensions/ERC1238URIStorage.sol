@@ -92,7 +92,7 @@ abstract contract ERC1238URIStorage is IERC1238URIStorage, ERC1238 {
     ) internal virtual {
         require(to != address(0), "ERC1238: mint to the zero address");
         require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
-        require(ids.length == uris.length, "ERC1238: ids and uris length mismatch");
+        require(ids.length == uris.length, "ERC1238: ids and URIs length mismatch");
 
         address minter = msg.sender;
 
