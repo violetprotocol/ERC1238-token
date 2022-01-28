@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-
 /**
  * @dev Interface proposal for Non-Transferable Token (NTT)
  * See https://github.com/ethereum/EIPs/issues/1238
@@ -13,44 +12,43 @@ interface IERC1238 {
      */
     event MintSingle(address indexed minter, address indexed to, uint256 indexed id, uint256 amount);
 
-
     /**
      * @dev Equivalent to multiple {MintSingle} events, where `minter` and `to` is the same for all token types
      */
-    event MintBatch(
-        address indexed minter,
-        address indexed to,
-        uint256[] ids,
-        uint256[] amounts
-    );
-
+    event MintBatch(address indexed minter, address indexed to, uint256[] ids, uint256[] amounts);
 
     /**
      * @dev Emitted when `amount` tokens of token type `id` owned by `owner` are burned by `burner`.
      */
     event BurnSingle(address indexed burner, address indexed owner, uint256 indexed id, uint256 amount);
 
-
     /**
      * @dev Equivalent to multiple {BurnSingle} events, where `owner` and `burner` is the same for all token types
      */
-    event BurnBatch(
-        address indexed burner, 
-        address indexed owner,
-        uint256[] ids,
-        uint256[] amounts
-    );
-    
-    
+    event BurnBatch(address indexed burner, address indexed owner, uint256[] ids, uint256[] amounts);
+
     /**
-     * @dev Returns the amount of tokens of token type `id` owned by `account`.
+     * @dev Returns the amount of tokens owned by `account` for a specific `tokenCollectionId`.
      *
      * Requirements:
      *
      * - `account` cannot be the zero address.
      */
-    function balanceOf(address account, uint256 id) external view returns (uint256);
+    function balanceOfCollection(address account, uint256 tokenCollectionId) external view returns (uint256);
 
+    /**
+     * @dev Returns the address who owns the token with id `tokenId` from a specific `tokenCollectionId`.
+     *
+     * Requirements:
+     *
+     * - `account` cannot be the zero address.
+     * - the collection must be a collection of fungible tokens
+     */
+    function ownerOf(
+        address account,
+        uint256 tokenCollectionId,
+        uint256 tokenId
+    ) external view returns (address);
 
     /**
      * @dev [Batched] version of {balanceOf}.
@@ -63,5 +61,4 @@ interface IERC1238 {
         external
         view
         returns (uint256[] memory);
-
 }

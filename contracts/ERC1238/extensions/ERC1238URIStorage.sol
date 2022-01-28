@@ -79,8 +79,8 @@ abstract contract ERC1238URIStorage is IERC1238URIStorage, ERC1238 {
         string memory uri,
         bytes memory data
     ) internal virtual {
-        _mint(to, id, amount, data);
-        _setTokenURI(id, uri);
+        // _mint(to, id, amount, data);
+        // _setTokenURI(id, uri);
     }
 
     function _mintBatchWithURI(
@@ -90,23 +90,17 @@ abstract contract ERC1238URIStorage is IERC1238URIStorage, ERC1238 {
         string[] memory uris,
         bytes memory data
     ) internal virtual {
-        require(to != address(0), "ERC1238: mint to the zero address");
-        require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
-        require(ids.length == uris.length, "ERC1238: ids and URIs length mismatch");
-
-        address minter = msg.sender;
-
-        for (uint256 i = 0; i < ids.length; i++) {
-            _beforeMint(minter, to, ids[i], amounts[i], data);
-
-            _setTokenURI(ids[i], uris[i]);
-
-            _balances[ids[i]][to] += amounts[i];
-        }
-
-        emit MintBatch(minter, to, ids, amounts);
-
-        _doSafeBatchMintAcceptanceCheck(minter, to, ids, amounts, data);
+        // require(to != address(0), "ERC1238: mint to the zero address");
+        // require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
+        // require(ids.length == uris.length, "ERC1238: ids and URIs length mismatch");
+        // address minter = msg.sender;
+        // for (uint256 i = 0; i < ids.length; i++) {
+        //     _beforeMint(minter, to, ids[i], amounts[i], data);
+        //     _setTokenURI(ids[i], uris[i]);
+        //     _balances[ids[i]][to] += amounts[i];
+        // }
+        // emit MintBatch(minter, to, ids, amounts);
+        // _doSafeBatchMintAcceptanceCheck(minter, to, ids, amounts, data);
     }
 
     /**
@@ -121,9 +115,8 @@ abstract contract ERC1238URIStorage is IERC1238URIStorage, ERC1238 {
         uint256 id,
         uint256 amount
     ) internal virtual {
-        super._burn(from, id, amount);
-
-        _deleteTokenURI(id);
+        // super._burn(from, id, amount);
+        // _deleteTokenURI(id);
     }
 
     function _burnBatchAndDeleteURIs(
@@ -131,26 +124,20 @@ abstract contract ERC1238URIStorage is IERC1238URIStorage, ERC1238 {
         uint256[] memory ids,
         uint256[] memory amounts
     ) internal virtual {
-        require(from != address(0), "ERC1238: burn from the zero address");
-        require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
-
-        address burner = msg.sender;
-
-        for (uint256 i = 0; i < ids.length; i++) {
-            uint256 id = ids[i];
-            uint256 amount = amounts[i];
-
-            _beforeBurn(burner, from, id, amount);
-
-            uint256 fromBalance = _balances[id][from];
-            require(fromBalance >= amount, "ERC1238: burn amount exceeds balance");
-            unchecked {
-                _balances[id][from] = fromBalance - amount;
-            }
-
-            _deleteTokenURI(id);
-        }
-
-        emit BurnBatch(burner, from, ids, amounts);
+        // require(from != address(0), "ERC1238: burn from the zero address");
+        // require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
+        // address burner = msg.sender;
+        // for (uint256 i = 0; i < ids.length; i++) {
+        //     uint256 id = ids[i];
+        //     uint256 amount = amounts[i];
+        //     _beforeBurn(burner, from, id, amount);
+        //     uint256 fromBalance = _balances[id][from];
+        //     require(fromBalance >= amount, "ERC1238: burn amount exceeds balance");
+        //     unchecked {
+        //         _balances[id][from] = fromBalance - amount;
+        //     }
+        //     _deleteTokenURI(id);
+        // }
+        // emit BurnBatch(burner, from, ids, amounts);
     }
 }

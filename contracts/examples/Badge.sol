@@ -50,11 +50,11 @@ contract Badge is ERC1238, ERC1238URIStorage {
         uint256 amount,
         bool deleteURI
     ) external onlyOwner {
-        if (deleteURI) {
-            _burnAndDeleteURI(from, id, amount);
-        } else {
-            _burn(from, id, amount);
-        }
+        // if (deleteURI) {
+        //     _burnAndDeleteURI(from, id, amount);
+        // } else {
+        //     _burn(from, id, amount);
+        // }
     }
 
     function burnBatch(
@@ -63,10 +63,10 @@ contract Badge is ERC1238, ERC1238URIStorage {
         uint256[] memory amounts,
         bool deleteURI
     ) external onlyOwner {
-        if (deleteURI) {
-            _burnBatchAndDeleteURIs(from, ids, amounts);
-        } else {
-            _burnBatch(from, ids, amounts);
-        }
+        // if (deleteURI) {
+        //     _burnBatchAndDeleteURIs(from, ids, amounts);
+        // } else {
+        //     _burnBatch(from, ids, amounts);
+        // }
     }
 }
