@@ -11,13 +11,13 @@ const BASE_URI = "https://token-cdn-domain/{id}.json";
 describe("ERC1238URIStakable", function () {
   let erc1238Stakable: ERC1238StakableMock;
   let admin: SignerWithAddress;
-  let tokenHolder: SignerWithAddress;
+  let tokenOwner: SignerWithAddress;
   let stakeholder: SignerWithAddress;
 
   before(async function () {
     const signers: SignerWithAddress[] = await ethers.getSigners();
     admin = signers[0];
-    tokenHolder = signers[1];
+    tokenOwner = signers[1];
     stakeholder = signers[2];
   });
 
@@ -34,43 +34,43 @@ describe("ERC1238URIStakable", function () {
 
     beforeEach(async () => {
       // mint fungible tokens
-      await erc1238Stakable.connect(admin).mint(tokenHolder.address, fungibleTokenId, amountMintedFungible, []);
+      await erc1238Stakable.connect(admin).mint(tokenOwner.address, fungibleTokenId, amountMintedFungible, []);
       // mint an NFT
-      await erc1238Stakable.connect(admin).mint(tokenHolder.address, nftID, amountMintedNonFungible, []);
+      await erc1238Stakable.connect(admin).mint(tokenOwner.address, nftID, amountMintedNonFungible, []);
     });
 
     it("should let a token owner increase a stake", async () => {
-      await erc1238Stakable.connect(tokenHolder).increaseStake(stakeholder.address, nftID, 1);
+      await erc1238Stakable.connect(tokenOwner).increaseStake(stakeholder.address, nftID, 1);
 
-      expect(await erc1238Stakable.stakeOf(tokenHolder.address, nftID, stakeholder.address)).to.eq(1);
+      expect(await erc1238Stakable.stakeOf(tokenOwner.address, nftID, stakeholder.address)).to.eq(1);
     });
 
     it("should let a stakeholder burn a staked NFT", async () => {
       // Given
-      expect(await erc1238Stakable.balanceOf(tokenHolder.address, nftID)).to.eq(amountMintedNonFungible);
+      expect(await erc1238Stakable.balanceOf(tokenOwner.address, nftID)).to.eq(amountMintedNonFungible);
 
       // When
-      await erc1238Stakable.connect(tokenHolder).increaseStake(stakeholder.address, nftID, 1);
+      await erc1238Stakable.connect(tokenOwner).increaseStake(stakeholder.address, nftID, 1);
 
-      await erc1238Stakable.connect(stakeholder).burn(tokenHolder.address, nftID, 1);
+      await erc1238Stakable.connect(stakeholder).burn(tokenOwner.address, nftID, 1);
 
       // Expect
-      expect(await erc1238Stakable.balanceOf(tokenHolder.address, nftID)).to.eq(0);
+      expect(await erc1238Stakable.balanceOf(tokenOwner.address, nftID)).to.eq(0);
     });
 
     it("should let a stakeholder burn up to the amount of fungible tokens staked", async () => {
       // Given
       const stakedAmount = toBN("500");
 
-      expect(await erc1238Stakable.balanceOf(tokenHolder.address, fungibleTokenId)).to.eq(amountMintedFungible);
+      expect(await erc1238Stakable.balanceOf(tokenOwner.address, fungibleTokenId)).to.eq(amountMintedFungible);
 
       // When
-      await erc1238Stakable.connect(tokenHolder).increaseStake(stakeholder.address, fungibleTokenId, stakedAmount);
+      await erc1238Stakable.connect(tokenOwner).increaseStake(stakeholder.address, fungibleTokenId, stakedAmount);
 
-      await erc1238Stakable.connect(stakeholder).burn(tokenHolder.address, fungibleTokenId, stakedAmount);
+      await erc1238Stakable.connect(stakeholder).burn(tokenOwner.address, fungibleTokenId, stakedAmount);
 
       // Expect
-      expect(await erc1238Stakable.balanceOf(tokenHolder.address, fungibleTokenId)).to.eq(
+      expect(await erc1238Stakable.balanceOf(tokenOwner.address, fungibleTokenId)).to.eq(
         amountMintedFungible.sub(stakedAmount),
       );
     });
@@ -79,41 +79,41 @@ describe("ERC1238URIStakable", function () {
       const stakedAmount = toBN("500");
       const burnAmount = stakedAmount.add(toBN("1"));
 
-      await erc1238Stakable.connect(tokenHolder).increaseStake(stakeholder.address, fungibleTokenId, stakedAmount);
+      await erc1238Stakable.connect(tokenOwner).increaseStake(stakeholder.address, fungibleTokenId, stakedAmount);
 
       await expect(
-        erc1238Stakable.connect(stakeholder).burn(tokenHolder.address, fungibleTokenId, burnAmount),
+        erc1238Stakable.connect(stakeholder).burn(tokenOwner.address, fungibleTokenId, burnAmount),
       ).to.be.revertedWith("ERC1238Stakable: Unauthorized to burn tokens");
     });
 
     it("should let a token owner burn tokens before staking", async () => {
       // Given
-      expect(await erc1238Stakable.balanceOf(tokenHolder.address, fungibleTokenId)).to.eq(amountMintedFungible);
+      expect(await erc1238Stakable.balanceOf(tokenOwner.address, fungibleTokenId)).to.eq(amountMintedFungible);
 
       // When
-      await erc1238Stakable.connect(tokenHolder).burn(tokenHolder.address, fungibleTokenId, amountMintedFungible);
+      await erc1238Stakable.connect(tokenOwner).burn(tokenOwner.address, fungibleTokenId, amountMintedFungible);
 
       // Expect
-      expect(await erc1238Stakable.balanceOf(tokenHolder.address, fungibleTokenId)).to.eq(0);
+      expect(await erc1238Stakable.balanceOf(tokenOwner.address, fungibleTokenId)).to.eq(0);
     });
 
     it("should let a token owner burn tokens after staking", async () => {
       // Given
       const stakedAmount = toBN("800");
 
-      expect(await erc1238Stakable.balanceOf(tokenHolder.address, fungibleTokenId)).to.eq(amountMintedFungible);
+      expect(await erc1238Stakable.balanceOf(tokenOwner.address, fungibleTokenId)).to.eq(amountMintedFungible);
 
       // When
-      await erc1238Stakable.connect(tokenHolder).increaseStake(stakeholder.address, fungibleTokenId, stakedAmount);
+      await erc1238Stakable.connect(tokenOwner).increaseStake(stakeholder.address, fungibleTokenId, stakedAmount);
 
-      await erc1238Stakable.connect(tokenHolder).burn(tokenHolder.address, fungibleTokenId, stakedAmount);
+      await erc1238Stakable.connect(tokenOwner).burn(tokenOwner.address, fungibleTokenId, stakedAmount);
 
       // Expect
-      expect(await erc1238Stakable.balanceOf(tokenHolder.address, fungibleTokenId)).to.eq(
+      expect(await erc1238Stakable.balanceOf(tokenOwner.address, fungibleTokenId)).to.eq(
         amountMintedFungible.sub(stakedAmount),
       );
       // "Burn" allowance is the same
-      expect(await erc1238Stakable.stakeOf(tokenHolder.address, fungibleTokenId, stakeholder.address)).to.eq(
+      expect(await erc1238Stakable.stakeOf(tokenOwner.address, fungibleTokenId, stakeholder.address)).to.eq(
         stakedAmount,
       );
     });
@@ -123,15 +123,15 @@ describe("ERC1238URIStakable", function () {
         const stakedAmount = toBN("800");
         const amountToUnstake = toBN("300");
 
-        await erc1238Stakable.connect(tokenHolder).increaseStake(stakeholder.address, fungibleTokenId, stakedAmount);
+        await erc1238Stakable.connect(tokenOwner).increaseStake(stakeholder.address, fungibleTokenId, stakedAmount);
 
-        expect(await erc1238Stakable.stakeOf(tokenHolder.address, fungibleTokenId, stakeholder.address)).to.eq(
+        expect(await erc1238Stakable.stakeOf(tokenOwner.address, fungibleTokenId, stakeholder.address)).to.eq(
           stakedAmount,
         );
 
-        await erc1238Stakable.connect(stakeholder).decreaseStake(tokenHolder.address, fungibleTokenId, amountToUnstake);
+        await erc1238Stakable.connect(stakeholder).decreaseStake(tokenOwner.address, fungibleTokenId, amountToUnstake);
 
-        expect(await erc1238Stakable.stakeOf(tokenHolder.address, fungibleTokenId, stakeholder.address)).to.eq(
+        expect(await erc1238Stakable.stakeOf(tokenOwner.address, fungibleTokenId, stakeholder.address)).to.eq(
           stakedAmount.sub(amountToUnstake),
         );
       });
@@ -140,30 +140,30 @@ describe("ERC1238URIStakable", function () {
         const stakedAmount = toBN("800");
         const amountToUnstake = stakedAmount;
 
-        await erc1238Stakable.connect(tokenHolder).increaseStake(stakeholder.address, fungibleTokenId, stakedAmount);
+        await erc1238Stakable.connect(tokenOwner).increaseStake(stakeholder.address, fungibleTokenId, stakedAmount);
 
-        expect(await erc1238Stakable.stakeOf(tokenHolder.address, fungibleTokenId, stakeholder.address)).to.eq(
+        expect(await erc1238Stakable.stakeOf(tokenOwner.address, fungibleTokenId, stakeholder.address)).to.eq(
           stakedAmount,
         );
 
-        await erc1238Stakable.connect(stakeholder).decreaseStake(tokenHolder.address, fungibleTokenId, amountToUnstake);
+        await erc1238Stakable.connect(stakeholder).decreaseStake(tokenOwner.address, fungibleTokenId, amountToUnstake);
 
-        expect(await erc1238Stakable.stakeOf(tokenHolder.address, fungibleTokenId, stakeholder.address)).to.eq(0);
+        expect(await erc1238Stakable.stakeOf(tokenOwner.address, fungibleTokenId, stakeholder.address)).to.eq(0);
       });
 
       it("should not let a token owner unstake", async () => {
         const stakedAmount = toBN("600");
-        await erc1238Stakable.connect(tokenHolder).increaseStake(stakeholder.address, fungibleTokenId, stakedAmount);
+        await erc1238Stakable.connect(tokenOwner).increaseStake(stakeholder.address, fungibleTokenId, stakedAmount);
 
-        expect(await erc1238Stakable.stakeOf(tokenHolder.address, fungibleTokenId, stakeholder.address)).to.eq(
+        expect(await erc1238Stakable.stakeOf(tokenOwner.address, fungibleTokenId, stakeholder.address)).to.eq(
           stakedAmount,
         );
 
         await expect(
-          erc1238Stakable.connect(tokenHolder).decreaseStake(tokenHolder.address, fungibleTokenId, stakedAmount),
+          erc1238Stakable.connect(tokenOwner).decreaseStake(tokenOwner.address, fungibleTokenId, stakedAmount),
         ).to.be.revertedWith("ERC1238Stakable: cannot decrease more than current stake");
 
-        expect(await erc1238Stakable.stakeOf(tokenHolder.address, fungibleTokenId, stakeholder.address)).to.eq(
+        expect(await erc1238Stakable.stakeOf(tokenOwner.address, fungibleTokenId, stakeholder.address)).to.eq(
           stakedAmount,
         );
       });
