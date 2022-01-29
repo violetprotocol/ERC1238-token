@@ -8,7 +8,7 @@ import "../ERC1238.sol";
  * @dev Proposal for ERC1238 tokens extension that make them 'stakable'
  */
 abstract contract ERC1238Stakable is ERC1238 {
-    // Mapping owner => tokenId => stakeholder => stake size
+    // Mapping owner => token id => stakeholder => stake size
     mapping(address => mapping(uint256 => mapping(address => uint256))) private _stakes;
 
     function _beforeBurn(
