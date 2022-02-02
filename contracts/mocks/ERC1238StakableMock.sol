@@ -16,7 +16,7 @@ contract ERC1238StakableMock is ERC1238, ERC1238Stakable {
         address from,
         uint256 id,
         uint256 amount
-    ) internal view override(ERC1238, ERC1238Stakable) {
+    ) internal override(ERC1238, ERC1238Stakable) {
         super._beforeBurn(burner, from, id, amount);
     }
 
