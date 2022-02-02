@@ -40,6 +40,11 @@ abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
         _escrowedBalances[burner][id] -= amount;
     }
 
+    /**
+     * @dev Lets sender entrusts `to` with `amount`
+     * of tokens which gets transferred between their respective escrowedBalances
+     *
+     */
     function _entrust(
         address to,
         uint256 id,
