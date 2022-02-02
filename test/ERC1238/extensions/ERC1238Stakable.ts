@@ -1,8 +1,7 @@
-import { artifacts, ethers, waffle } from "hardhat";
-import type { Artifact } from "hardhat/types";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { expect } from "chai";
-
+import { artifacts, ethers, waffle } from "hardhat";
+import type { Artifact } from "hardhat/types";
 import type { ERC1238StakableMock } from "../../../src/types/ERC1238StakableMock";
 import { toBN } from "../../utils/test-utils";
 
@@ -84,6 +83,28 @@ describe("ERC1238URIStakable", function () {
       await expect(
         erc1238Stakable.connect(stakeholder).burn(tokenOwner.address, fungibleTokenId, burnAmount),
       ).to.be.revertedWith("ERC1238Stakable: Unauthorized to burn tokens");
+    });
+
+    it("should not let a stakeholder burn more than its stake in several transactions", async () => {
+      // Given
+      const stakedAmount = toBN("500");
+      // burnAmount is half the staked amount
+      const burnAmount = stakedAmount.div(2);
+
+      await erc1238Stakable.connect(tokenOwner).increaseStake(stakeholder.address, fungibleTokenId, stakedAmount);
+      // burn half
+      await erc1238Stakable.connect(stakeholder).burn(tokenOwner.address, fungibleTokenId, burnAmount);
+      // burn the other half
+      await erc1238Stakable.connect(stakeholder).burn(tokenOwner.address, fungibleTokenId, burnAmount);
+
+      expect(await erc1238Stakable.stakeOf(tokenOwner.address, fungibleTokenId, stakeholder.address)).to.eq(0);
+
+      // When
+      // Tries to burn more
+      const tx = erc1238Stakable.connect(stakeholder).burn(tokenOwner.address, fungibleTokenId, burnAmount);
+
+      // Expect
+      await expect(tx).to.be.revertedWith("ERC1238Stakable: Unauthorized to burn tokens");
     });
 
     it("should let a token owner burn tokens before staking", async () => {
