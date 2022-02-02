@@ -6,7 +6,9 @@ import "../ERC1238.sol";
 import "./IERC1238Packed.sol";
 
 /**
- * @dev
+ * @dev Extension that enables packing a `baseId` inside a token id
+ * Values are packed the following way in the id:
+ * [baseId (48 bits)][owner (160 bits)][counter (48 bits)]
  */
 abstract contract ERC1238Packed is IERC1238Packed, ERC1238 {
     mapping(address => mapping(uint48 => uint256)) internal _baseIdBalances;
