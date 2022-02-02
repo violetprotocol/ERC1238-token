@@ -1,8 +1,7 @@
-import { artifacts, ethers, waffle } from "hardhat";
-import type { Artifact } from "hardhat/types";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { expect } from "chai";
-
+import { artifacts, ethers, waffle } from "hardhat";
+import type { Artifact } from "hardhat/types";
 import type { ERC1238HoldableMock } from "../../../src/types/ERC1238HoldableMock";
 import { ZERO_ADDRESS } from "../../utils/test-utils";
 
@@ -33,13 +32,13 @@ describe("ERC1238URIHoldable", function () {
   });
 
   describe("Minting", () => {
-    it("should set the the token recipient as first holder", async () => {
+    it("should set the token recipient as first holder", async () => {
       await erc1238Holdable.mint(tokenOwner.address, tokenId, mintAmount, data);
 
       expect(await erc1238Holdable.escrowedBalance(tokenOwner.address, tokenId)).to.eq(mintAmount);
     });
 
-    it("should update the held balance when minting multiple times", async () => {
+    it("should update the balance held when minting multiple times", async () => {
       const firstAmount = 1000;
       const secondAmount = 200;
       await erc1238Holdable.mint(tokenOwner.address, tokenId, firstAmount, data);
@@ -113,7 +112,7 @@ describe("ERC1238URIHoldable", function () {
 
     context("Partial Escrow", () => {
       const escrowedAmount = mintAmount - 1000;
-      it("should let a token owner put all their token in escrow", async () => {
+      it("should let a token owner put some of their token in escrow", async () => {
         await erc1238Holdable.mint(tokenOwner.address, tokenId, mintAmount, data);
 
         // tokenOwner entrusts tokenHolder1 with some of their tokens
