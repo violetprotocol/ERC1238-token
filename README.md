@@ -1,5 +1,9 @@
 # [ERC1238] Non-transferable Tokens (NTTs/badges)
 
+## Overview
+
+This repository contains work-in-progress implementation proposal(s) for Non-transferable Tokens (see https://github.com/ethereum/EIPs/issues/1238).
+
 ## Usage
 
 ### Pre Requisites
