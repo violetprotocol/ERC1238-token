@@ -166,12 +166,25 @@ describe("ERC1238URIHoldable", function () {
       expect(await erc1238Holdable.balanceOf(tokenOwner.address, tokenId)).to.eq(mintAmount - amountToBurn);
     });
 
-    it("should not give a token holder the right to burn tokens", async () => {
+    it("should give a token holder the right to burn tokens", async () => {
+      const amountToBurn = mintAmount - 100;
+
       await erc1238Holdable.connect(tokenOwner).entrust(tokenHolder1.address, tokenId, mintAmount);
 
+      await erc1238Holdable.connect(tokenHolder1).burn(tokenOwner.address, tokenId, amountToBurn);
+
+      expect(await erc1238Holdable.escrowedBalance(tokenHolder1.address, tokenId)).to.eq(mintAmount - amountToBurn);
+      expect(await erc1238Holdable.balanceOf(tokenOwner.address, tokenId)).to.eq(mintAmount - amountToBurn);
+    });
+
+    it("should not let a token holder burn more tokens than they hodl", async () => {
+      const escrowedAmount = mintAmount;
+
+      await erc1238Holdable.connect(tokenOwner).entrust(tokenHolder1.address, tokenId, escrowedAmount);
+
       await expect(
-        erc1238Holdable.connect(tokenHolder1).burn(tokenOwner.address, tokenId, mintAmount),
-      ).to.be.revertedWith("ERC1238Holdable: Unauthorized to burn tokens");
+        erc1238Holdable.connect(tokenOwner).burn(tokenOwner.address, tokenId, escrowedAmount + 1),
+      ).to.be.revertedWith("ERC1238Holdable: Amount to burn exceeds amount held");
     });
 
     it("should not let a token owner burn tokens they do not hold", async () => {

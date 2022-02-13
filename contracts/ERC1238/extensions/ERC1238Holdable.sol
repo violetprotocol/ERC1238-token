@@ -34,7 +34,6 @@ abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
         uint256 id,
         uint256 amount
     ) internal virtual override {
-        require(burner == from, "ERC1238Holdable: Unauthorized to burn tokens");
         require(_escrowedBalances[burner][id] >= amount, "ERC1238Holdable: Amount to burn exceeds amount held");
 
         _escrowedBalances[burner][id] -= amount;
