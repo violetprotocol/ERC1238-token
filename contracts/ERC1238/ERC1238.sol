@@ -23,7 +23,8 @@ contract ERC1238 is IERC1238 {
     string private baseURI;
 
     /**
-     * @dev See {_setURI}.
+     * @dev Initializes the contract by setting a `baseURI`.
+     * See {_setBaseURI}
      */
     constructor(string memory baseURI_) {
         _setBaseURI(baseURI_);
