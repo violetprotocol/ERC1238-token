@@ -83,6 +83,16 @@ abstract contract ERC1238URIStorage is IERC1238URIStorage, ERC1238 {
         _setTokenURI(id, uri);
     }
 
+    /**
+     * @dev [Batched] version of {_mintWithURI}.
+     *
+     * Requirements:
+     *
+     * - `ids` and `amounts` must have the same length.
+     * - `ids` and `uris` must have the same length.
+     *
+     * Emits a {MintBatch} event.
+     */
     function _mintBatchWithURI(
         address to,
         uint256[] memory ids,
@@ -110,7 +120,7 @@ abstract contract ERC1238URIStorage is IERC1238URIStorage, ERC1238 {
     }
 
     /**
-     * @dev Destroys `id` and deletes its associated URI.
+     * @dev Destroys `amount` of tokens with id `id` owned by `from` and deletes the associated URI.
      *
      * Requirements:
      *  - A token URI must be set.
@@ -126,6 +136,16 @@ abstract contract ERC1238URIStorage is IERC1238URIStorage, ERC1238 {
         _deleteTokenURI(id);
     }
 
+    /**
+     * @dev [Batched] version of {_burnAndDeleteURI}.
+     *
+     * Requirements:
+     *
+     * - `ids` and `amounts` must have the same length.
+     * - For each id the balance of `from` must be at least the amount wished to be burnt.
+     *
+     * Emits a {BurnBatch} event.
+     */
     function _burnBatchAndDeleteURIs(
         address from,
         uint256[] memory ids,
