@@ -7,7 +7,7 @@ import "./IERC1238Receiver.sol";
 import "../utils/AddressMinimal.sol";
 
 /**
- * @dev Implementation proposal for Non-Transferable Token (NTT)
+ * @dev Implementation proposal for Badge tokens
  * See https://github.com/ethereum/EIPs/issues/1238
  */
 contract ERC1238 is IERC1238 {
@@ -37,11 +37,9 @@ contract ERC1238 is IERC1238 {
     // }
 
     /**
-     * @dev See {IERC1155MetadataURI-uri}.
-     *
-     * This implementation returns the same URI for *all* token types. It relies
-     * on the token type ID substitution mechanism
-     * https://eips.ethereum.org/EIPS/eip-1155#metadata[defined in the EIP].
+     * @dev This implementation returns the same URI for *all* token types. It relies
+     * on the token type ID substitution mechanism as in EIP-1155:
+     * https://eips.ethereum.org/EIPS/eip-1155#metadata
      *
      * Clients calling this function must replace the `\{id\}` substring with the
      * actual token type ID.
@@ -89,8 +87,8 @@ contract ERC1238 is IERC1238 {
 
     /**
      * @dev Sets a new URI for all token types, by relying on the token type ID
-     * substitution mechanism
-     * https://eips.ethereum.org/EIPS/eip-1238#metadata[defined in the EIP].
+     * substitution mechanism as in EIP-1155
+     * https://eips.ethereum.org/EIPS/eip-1155#metadata
      *
      * By this mechanism, any occurrence of the `\{id\}` substring in either the
      * URI or any of the amounts in the JSON file at said URI will be replaced by
@@ -101,7 +99,6 @@ contract ERC1238 is IERC1238 {
      * `https://token-cdn-domain/000000000000000000000000000000000000000000000000000000000004cce0.json`
      * for token type ID 0x4cce0.
      *
-     * See {uri}.
      *
      * Because these URIs cannot be meaningfully represented by the {URI} event,
      * this function emits no events.
@@ -120,6 +117,8 @@ contract ERC1238 is IERC1238 {
      * - `to` cannot be the zero address.
      * - If `to` refers to a smart contract, it must implement {IERC1238Receiver-onERC1238Mint} and return the
      * acceptance magic value.
+     *
+     * Emits a {MintSingle} event.
      */
     function _mint(
         address to,
@@ -147,6 +146,8 @@ contract ERC1238 is IERC1238 {
      * - `ids` and `amounts` must have the same length.
      * - If `to` refers to a smart contract, it must implement {IERC1238Receiver-onERC1238BatchMint} and return the
      * acceptance magic value.
+     *
+     * Emits a {MintBatch} event.
      */
     function _mintBatch(
         address to,
@@ -177,6 +178,8 @@ contract ERC1238 is IERC1238 {
      *
      * - `from` cannot be the zero address.
      * - `from` must have at least `amount` tokens of token type `id`.
+     *
+     * Emits a {BurnSingle} event.
      */
     function _burn(
         address from,
@@ -204,6 +207,8 @@ contract ERC1238 is IERC1238 {
      * Requirements:
      *
      * - `ids` and `amounts` must have the same length.
+     *
+     * Emits a {BurnBatch} event.
      */
     function _burnBatch(
         address from,
@@ -231,6 +236,13 @@ contract ERC1238 is IERC1238 {
         emit BurnBatch(burner, from, ids, amounts);
     }
 
+    /**
+     * @dev Hook that is called before an `amount` of tokens are minted.
+     *
+     * Calling conditions:
+     * - `minter` and `to` cannot be the zero address
+     *
+     */
     function _beforeMint(
         address minter,
         address to,
@@ -239,6 +251,13 @@ contract ERC1238 is IERC1238 {
         bytes memory data
     ) internal virtual {}
 
+    /**
+     * @dev Hook that is called before an `amount` of tokens are burned.
+     *
+     * Calling conditions:
+     * - `minter` and `to` cannot be the zero address
+     *
+     */
     function _beforeBurn(
         address burner,
         address from,
