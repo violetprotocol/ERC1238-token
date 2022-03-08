@@ -12,9 +12,14 @@ interface IERC1238 {
     event MintSingle(address indexed minter, address indexed to, uint256 indexed id, uint256 amount);
 
     /**
-     * @dev Equivalent to multiple {MintSingle} events, where `minter` and `to` is the same for all token types
+     * @dev Equivalent to multiple {MintSingle} events when minting to multiple addresses.
      */
-    event MintBatch(address indexed minter, address indexed to, uint256[] ids, uint256[] amounts);
+    event MintBatch(address indexed minter, address[] to, uint256[] ids, uint256[] amounts);
+
+    /**
+     * @dev Equivalent to multiple {MintSingle} events when minting to a single address.
+     */
+    event MintBatch(address indexed minter, address to, uint256[] ids, uint256[] amounts);
 
     /**
      * @dev Emitted when `amount` tokens of token type `id` owned by `owner` are burned by `burner`.
@@ -22,9 +27,14 @@ interface IERC1238 {
     event BurnSingle(address indexed burner, address indexed owner, uint256 indexed id, uint256 amount);
 
     /**
-     * @dev Equivalent to multiple {BurnSingle} events, where `owner` and `burner` is the same for all token types
+     * @dev Equivalent to multiple {BurnSingle} events, where `owner` is the same for all token types.
      */
     event BurnBatch(address indexed burner, address indexed owner, uint256[] ids, uint256[] amounts);
+
+    /**
+     * @dev Equivalent to multiple {BurnSingle} events, where `owners` can be different addresses.
+     */
+    event BurnBatch(address indexed burner, address[] owners, uint256[] ids, uint256[] amounts);
 
     /**
      * @dev Returns the amount of tokens of token type `id` owned by `account`.

@@ -140,6 +140,7 @@ contract ERC1238 is IERC1238 {
 
     /**
      * @dev [Batched] version of {_mint}.
+     * Mints multiple tokens to a single address.
      *
      * Requirements:
      *
@@ -169,6 +170,44 @@ contract ERC1238 is IERC1238 {
         emit MintBatch(minter, to, ids, amounts);
 
         _doSafeBatchMintAcceptanceCheck(minter, to, ids, amounts, data);
+    }
+
+    /**
+     * @dev [Batched] version of {_mint}.
+     * Mints multiple tokens to multiple addresses.
+     *
+     * Requirements:
+     *
+     * - `to` and `ids` must have the same length.
+     * - `ids` and `amounts` must have the same length.
+     * - If a recipient refers to a smart contract, it must implement {IERC1238Receiver-onERC1238BatchMint} and
+     * return the acceptance magic value.
+     *
+     * Emits a {MintBatch} event.
+     */
+    function _mintBatch(
+        address[] memory to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    ) internal virtual {
+        require(to.length == ids.length, "ERC1238: to and ids length mismatch");
+        require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
+
+        address minter = msg.sender;
+
+        for (uint256 i = 0; i < ids.length; i++) {
+            address recipient = to[i];
+            require(recipient != address(0), "ERC1238: mint to the zero address");
+
+            _doSafeMintAcceptanceCheck(minter, recipient, ids[i], amounts[i], data);
+
+            _beforeMint(minter, recipient, ids[i], amounts[i], data);
+
+            _balances[ids[i]][recipient] += amounts[i];
+        }
+
+        emit MintBatch(minter, to, ids, amounts);
     }
 
     /**
@@ -202,7 +241,8 @@ contract ERC1238 is IERC1238 {
     }
 
     /**
-     * @dev [Batched] version of {_burn}.
+     * @dev [Batched] version of {_burn}
+     * where `from` is a single address.
      *
      * Requirements:
      *
@@ -230,6 +270,45 @@ contract ERC1238 is IERC1238 {
             require(fromBalance >= amount, "ERC1238: burn amount exceeds balance");
             unchecked {
                 _balances[id][from] = fromBalance - amount;
+            }
+        }
+
+        emit BurnBatch(burner, from, ids, amounts);
+    }
+
+    /**
+     * @dev [Batched] version of {_burn}
+     * where `from` is an array of addresses.
+     *
+     * Requirements:
+     *
+     * - `ids` and `amounts` must have the same length.
+     *
+     * Emits a {BurnBatch} event.
+     */
+    function _burnBatch(
+        address[] memory from,
+        uint256[] memory ids,
+        uint256[] memory amounts
+    ) internal virtual {
+        require(from.length == ids.length, "ERC1238: from and ids length mismatch");
+        require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
+
+        address burner = msg.sender;
+
+        for (uint256 i = 0; i < ids.length; i++) {
+            address owner = from[i];
+            require(owner != address(0), "ERC1238: burn from the zero address");
+
+            uint256 id = ids[i];
+            uint256 amount = amounts[i];
+
+            _beforeBurn(burner, owner, id, amount);
+
+            uint256 fromBalance = _balances[id][owner];
+            require(fromBalance >= amount, "ERC1238: burn amount exceeds balance");
+            unchecked {
+                _balances[id][owner] = fromBalance - amount;
             }
         }
 
@@ -271,7 +350,7 @@ contract ERC1238 is IERC1238 {
         uint256 id,
         uint256 amount,
         bytes memory data
-    ) private {
+    ) internal {
         if (to.isContract()) {
             try IERC1238Receiver(to).onERC1238Mint(minter, id, amount, data) returns (bytes4 response) {
                 if (response != IERC1238Receiver.onERC1238Mint.selector) {
