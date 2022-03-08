@@ -1,9 +1,8 @@
+import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
+import { expect } from "chai";
 import { artifacts, ethers, waffle } from "hardhat";
 import type { Artifact } from "hardhat/types";
-import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-
-import type { Badge } from "../../src/types/Badge";
-import { expect } from "chai";
+import type { Badges } from "../../src/types/Badges";
 import { toBN } from "../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
@@ -11,7 +10,7 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 // ~ WIP! ~
 describe("Badge", function () {
-  let badge: Badge;
+  let badge: Badges;
   let admin: SignerWithAddress;
   let signer1: SignerWithAddress;
   let badgeRecipient: SignerWithAddress;
@@ -24,8 +23,8 @@ describe("Badge", function () {
   });
 
   beforeEach(async function () {
-    const BadgeArtifact: Artifact = await artifacts.readArtifact("Badge");
-    badge = <Badge>await waffle.deployContract(admin, BadgeArtifact, [admin.address, BASE_URI]);
+    const BadgeArtifact: Artifact = await artifacts.readArtifact("Badges");
+    badge = <Badges>await waffle.deployContract(admin, BadgeArtifact, [admin.address, BASE_URI]);
   });
 
   describe("Ownership", () => {

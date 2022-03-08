@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../ERC1238/extensions/ERC1238URIStorage.sol";
 
-contract Badge is ERC1238, ERC1238URIStorage {
+contract Badges is ERC1238, ERC1238URIStorage {
     address public owner;
 
     constructor(address owner_, string memory baseURI_) ERC1238(baseURI_) {
@@ -49,7 +49,9 @@ contract Badge is ERC1238, ERC1238URIStorage {
         uint256 id,
         uint256 amount,
         bool deleteURI
-    ) external onlyOwner {
+    ) external {
+        require(msg.sender == from || msg.sender == owner, "Unauthorized to burn");
+
         if (deleteURI) {
             _burnAndDeleteURI(from, id, amount);
         } else {
@@ -63,6 +65,8 @@ contract Badge is ERC1238, ERC1238URIStorage {
         uint256[] memory amounts,
         bool deleteURI
     ) external onlyOwner {
+        require(msg.sender == from || msg.sender == owner, "Unauthorized to burn");
+
         if (deleteURI) {
             _burnBatchAndDeleteURIs(from, ids, amounts);
         } else {
