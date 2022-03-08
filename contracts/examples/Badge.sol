@@ -35,7 +35,7 @@ contract Badge is ERC1238, ERC1238URIStorage {
     }
 
     function mintBatch(
-        address to,
+        address[] memory to,
         uint256[] memory ids,
         uint256[] memory amounts,
         string[] memory uris,
