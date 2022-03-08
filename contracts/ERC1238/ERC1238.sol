@@ -7,7 +7,7 @@ import "./IERC1238Receiver.sol";
 import "../utils/AddressMinimal.sol";
 
 /**
- * @dev Implementation proposal for Badge tokens
+ * @dev Implementation proposal for non-transferable (Badge) tokens
  * See https://github.com/ethereum/EIPs/issues/1238
  */
 contract ERC1238 is IERC1238 {
