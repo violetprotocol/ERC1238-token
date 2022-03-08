@@ -29,6 +29,15 @@ contract ERC1238Mock is ERC1238 {
     }
 
     function mintBatch(
+        address[] memory to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    ) public {
+        _mintBatch(to, ids, amounts, data);
+    }
+
+    function mintBatch(
         address to,
         uint256[] memory ids,
         uint256[] memory amounts,
@@ -43,6 +52,14 @@ contract ERC1238Mock is ERC1238 {
         uint256 amount
     ) public {
         _burn(owner, id, amount);
+    }
+
+    function burnBatch(
+        address[] memory owners,
+        uint256[] memory ids,
+        uint256[] memory amounts
+    ) public {
+        _burnBatch(owners, ids, amounts);
     }
 
     function burnBatch(

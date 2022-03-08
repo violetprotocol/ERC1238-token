@@ -27,7 +27,7 @@ contract ERC1238URIStorageMock is ERC1238, ERC1238URIStorage {
     }
 
     function mintBatchWithURI(
-        address to,
+        address[] memory to,
         uint256[] memory ids,
         uint256[] memory amounts,
         string[] memory uris,

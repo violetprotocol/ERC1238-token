@@ -1,8 +1,7 @@
-import { artifacts, ethers, waffle } from "hardhat";
-import type { Artifact } from "hardhat/types";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { expect } from "chai";
-
+import { artifacts, ethers, waffle } from "hardhat";
+import type { Artifact } from "hardhat/types";
 import type { ERC1238URIStorageMock } from "../../../src/types/ERC1238URIStorageMock";
 import { toBN, ZERO_ADDRESS } from "../../utils/test-utils";
 
@@ -13,13 +12,17 @@ describe("ERC1238URIStorage", function () {
   let erc1238UriMock: ERC1238URIStorageMock;
   let admin: SignerWithAddress;
   let tokenRecipient: SignerWithAddress;
-  let tokenBatchRecipient: SignerWithAddress;
+  let tokenBatchRecipient1: SignerWithAddress;
+  let tokenBatchRecipient2: SignerWithAddress;
+  let tokenBatchRecipients: string[];
 
   before(async function () {
     const signers: SignerWithAddress[] = await ethers.getSigners();
     admin = signers[0];
     tokenRecipient = signers[1];
-    tokenBatchRecipient = signers[2];
+    tokenBatchRecipient1 = signers[2];
+    tokenBatchRecipient2 = signers[2];
+    tokenBatchRecipients = [tokenBatchRecipient1.address, tokenBatchRecipient1.address, tokenBatchRecipient2.address];
   });
 
   beforeEach(async function () {
@@ -148,10 +151,12 @@ describe("ERC1238URIStorage", function () {
 
     describe("_mintBatchWithURI", () => {
       it("should revert with the zero address", async () => {
+        const recipients = [ZERO_ADDRESS, tokenBatchRecipient1.address, tokenBatchRecipient2.address];
+
         await expect(
           erc1238UriMock
             .connect(admin)
-            .mintBatchWithURI(ZERO_ADDRESS, tokenBatchIds, mintBatchAmounts, tokenBatchURIs, data),
+            .mintBatchWithURI(recipients, tokenBatchIds, mintBatchAmounts, tokenBatchURIs, data),
         ).to.be.revertedWith("ERC1238: mint to the zero address");
       });
 
@@ -159,25 +164,13 @@ describe("ERC1238URIStorage", function () {
         await expect(
           erc1238UriMock
             .connect(admin)
-            .mintBatchWithURI(
-              tokenBatchRecipient.address,
-              tokenBatchIds.slice(1),
-              mintBatchAmounts,
-              tokenBatchURIs,
-              data,
-            ),
+            .mintBatchWithURI(tokenBatchRecipients, tokenBatchIds.slice(1), mintBatchAmounts, tokenBatchURIs, data),
         ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
 
         await expect(
           erc1238UriMock
             .connect(admin)
-            .mintBatchWithURI(
-              tokenBatchRecipient.address,
-              tokenBatchIds,
-              mintBatchAmounts.slice(1),
-              tokenBatchURIs,
-              data,
-            ),
+            .mintBatchWithURI(tokenBatchRecipients, tokenBatchIds, mintBatchAmounts.slice(1), tokenBatchURIs, data),
         ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
       });
 
@@ -185,20 +178,14 @@ describe("ERC1238URIStorage", function () {
         await expect(
           erc1238UriMock
             .connect(admin)
-            .mintBatchWithURI(
-              tokenBatchRecipient.address,
-              tokenBatchIds,
-              mintBatchAmounts,
-              tokenBatchURIs.slice(1),
-              data,
-            ),
+            .mintBatchWithURI(tokenBatchRecipients, tokenBatchIds, mintBatchAmounts, tokenBatchURIs.slice(1), data),
         ).to.be.revertedWith("ERC1238: ids and URIs length mismatch");
 
         await expect(
           erc1238UriMock
             .connect(admin)
             .mintBatchWithURI(
-              tokenBatchRecipient.address,
+              tokenBatchRecipients,
               tokenBatchIds.slice(1),
               mintBatchAmounts.slice(1),
               tokenBatchURIs,
@@ -210,17 +197,17 @@ describe("ERC1238URIStorage", function () {
       it("should credit the minted tokens", async () => {
         await erc1238UriMock
           .connect(admin)
-          .mintBatchWithURI(tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts, tokenBatchURIs, data);
+          .mintBatchWithURI(tokenBatchRecipients, tokenBatchIds, mintBatchAmounts, tokenBatchURIs, data);
 
         tokenBatchIds.forEach(async (tokenId, index) =>
-          expect(await erc1238UriMock.balanceOf(tokenBatchRecipient.address, tokenId)).to.eq(mintBatchAmounts[index]),
+          expect(await erc1238UriMock.balanceOf(tokenBatchRecipients[index], tokenId)).to.eq(mintBatchAmounts[index]),
         );
       });
 
       it("should set the right token URIs", async () => {
         await erc1238UriMock
           .connect(admin)
-          .mintBatchWithURI(tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts, tokenBatchURIs, data);
+          .mintBatchWithURI(tokenBatchRecipients, tokenBatchIds, mintBatchAmounts, tokenBatchURIs, data);
 
         tokenBatchIds.forEach(async (tokenId, index) =>
           expect(await erc1238UriMock.tokenURI(tokenId)).to.eq(tokenBatchURIs[index]),
@@ -229,21 +216,15 @@ describe("ERC1238URIStorage", function () {
 
       it("should emit a MintBatch event", async () => {
         await expect(
-          erc1238UriMock.mintBatchWithURI(
-            tokenRecipient.address,
-            tokenBatchIds,
-            mintBatchAmounts,
-            tokenBatchURIs,
-            data,
-          ),
+          erc1238UriMock.mintBatchWithURI(tokenBatchRecipients, tokenBatchIds, mintBatchAmounts, tokenBatchURIs, data),
         )
-          .to.emit(erc1238UriMock, "MintBatch")
-          .withArgs(admin.address, tokenRecipient.address, tokenBatchIds, mintBatchAmounts);
+          .to.emit(erc1238UriMock, "MintBatch(address,address[],uint256[],uint256[])")
+          .withArgs(admin.address, tokenBatchRecipients, tokenBatchIds, mintBatchAmounts);
       });
 
       it("should emit URI events", async () => {
         const tx = erc1238UriMock.mintBatchWithURI(
-          tokenRecipient.address,
+          tokenBatchRecipients,
           tokenBatchIds,
           mintBatchAmounts,
           tokenBatchURIs,
@@ -324,13 +305,13 @@ describe("ERC1238URIStorage", function () {
         await expect(
           erc1238UriMock
             .connect(admin)
-            .burnBatchAndDeleteURIs(tokenBatchRecipient.address, tokenBatchIds.slice(1), burnBatchAmounts),
+            .burnBatchAndDeleteURIs(tokenBatchRecipient1.address, tokenBatchIds.slice(1), burnBatchAmounts),
         ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
 
         await expect(
           erc1238UriMock
             .connect(admin)
-            .burnBatchAndDeleteURIs(tokenBatchRecipient.address, tokenBatchIds, burnBatchAmounts.slice(1)),
+            .burnBatchAndDeleteURIs(tokenBatchRecipient1.address, tokenBatchIds, burnBatchAmounts.slice(1)),
         ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
       });
 
@@ -338,7 +319,7 @@ describe("ERC1238URIStorage", function () {
         await erc1238UriMock
           .connect(admin)
           .mintBatchWithURI(
-            tokenRecipient.address,
+            Array(3).fill(tokenRecipient.address),
             tokenBatchIds.slice(1),
             burnBatchAmounts.slice(1),
             tokenBatchURIs.slice(1),
@@ -353,7 +334,13 @@ describe("ERC1238URIStorage", function () {
       it("should properly burn tokens", async () => {
         await erc1238UriMock
           .connect(admin)
-          .mintBatchWithURI(tokenRecipient.address, tokenBatchIds, mintBatchAmounts, tokenBatchURIs, data);
+          .mintBatchWithURI(
+            Array(3).fill(tokenRecipient.address),
+            tokenBatchIds,
+            mintBatchAmounts,
+            tokenBatchURIs,
+            data,
+          );
 
         await erc1238UriMock
           .connect(admin)
@@ -368,7 +355,7 @@ describe("ERC1238URIStorage", function () {
 
       it("should emit a BurnBatch event", async () => {
         await erc1238UriMock.mintBatchWithURI(
-          tokenRecipient.address,
+          Array(3).fill(tokenRecipient.address),
           tokenBatchIds,
           mintBatchAmounts,
           tokenBatchURIs,
@@ -376,13 +363,13 @@ describe("ERC1238URIStorage", function () {
         );
 
         await expect(erc1238UriMock.burnBatchAndDeleteURIs(tokenRecipient.address, tokenBatchIds, burnBatchAmounts))
-          .to.emit(erc1238UriMock, "BurnBatch")
+          .to.emit(erc1238UriMock, "BurnBatch(address,address,uint256[],uint256[])")
           .withArgs(admin.address, tokenRecipient.address, tokenBatchIds, burnBatchAmounts);
       });
 
       it("should delete all token URIs", async () => {
         await erc1238UriMock.mintBatchWithURI(
-          tokenRecipient.address,
+          Array(3).fill(tokenRecipient.address),
           tokenBatchIds,
           mintBatchAmounts,
           tokenBatchURIs,
