@@ -16,8 +16,6 @@ contract ERC1238 is IERC1238 {
     // Mapping from token ID to account balances
     mapping(uint256 => mapping(address => uint256)) internal _balances;
 
-    // TODO: Add a mapping returning the number of tokens in circulation by id?
-
     // Used as the URI by default for all token types by relying on ID substitution,
     // e.g. https://token-cdn-domain/{id}.json
     string private baseURI;
@@ -107,6 +105,62 @@ contract ERC1238 is IERC1238 {
         baseURI = newBaseURI;
     }
 
+    function _mintToEOA(
+        address to,
+        uint256 id,
+        uint256 amount,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        bytes memory data
+    ) internal virtual {
+        bytes32 mintHash = keccak256(abi.encode(to, id, amount, block.chainid, address(this)));
+        _verifyMintingApproval(to, mintHash, v, r, s);
+
+        _mint(to, id, amount, data);
+    }
+
+    function _mintBatchToEOA(
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        bytes memory data
+    ) internal virtual {
+        bytes32 mintHash = keccak256(abi.encode(to, ids, amounts, block.chainid, address(this)));
+        _verifyMintingApproval(to, mintHash, v, r, s);
+
+        _mintBatch(to, ids, amounts, data);
+    }
+
+    function _mintToSmartContract(
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) internal virtual {
+        require(to.isContract(), "ERC1238: Recipient is not a contract");
+
+        _mint(to, id, amount, data);
+
+        _doSafeMintAcceptanceCheck(msg.sender, to, id, amount, data);
+    }
+
+    function _mintBatchToSmartContract(
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    ) internal virtual {
+        require(to.isContract(), "ERC1238: Recipient is not a contract");
+
+        _mintBatch(to, ids, amounts, data);
+
+        _doSafeBatchMintAcceptanceCheck(msg.sender, to, ids, amounts, data);
+    }
+
     /**
      * @dev Creates `amount` tokens of token type `id`, and assigns them to `to`.
      *
@@ -125,7 +179,7 @@ contract ERC1238 is IERC1238 {
         uint256 id,
         uint256 amount,
         bytes memory data
-    ) internal virtual {
+    ) private {
         require(to != address(0), "ERC1238: mint to the zero address");
 
         address minter = msg.sender;
@@ -134,8 +188,6 @@ contract ERC1238 is IERC1238 {
 
         _balances[id][to] += amount;
         emit MintSingle(minter, to, id, amount);
-
-        _doSafeMintAcceptanceCheck(minter, to, id, amount, data);
     }
 
     /**
@@ -154,7 +206,7 @@ contract ERC1238 is IERC1238 {
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory data
-    ) internal virtual {
+    ) private {
         require(to != address(0), "ERC1238: mint to the zero address");
         require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
 
@@ -167,8 +219,6 @@ contract ERC1238 is IERC1238 {
         }
 
         emit MintBatch(minter, to, ids, amounts);
-
-        _doSafeBatchMintAcceptanceCheck(minter, to, ids, amounts, data);
     }
 
     /**
@@ -265,6 +315,16 @@ contract ERC1238 is IERC1238 {
         uint256 amount
     ) internal virtual {}
 
+    function _verifyMintingApproval(
+        address to,
+        bytes32 mintHash,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) private pure {
+        require(to == ecrecover(mintHash, v, r, s), "ERC1238: Invalid signature for minting approval");
+    }
+
     function _doSafeMintAcceptanceCheck(
         address minter,
         address to,
@@ -272,16 +332,14 @@ contract ERC1238 is IERC1238 {
         uint256 amount,
         bytes memory data
     ) private {
-        if (to.isContract()) {
-            try IERC1238Receiver(to).onERC1238Mint(minter, id, amount, data) returns (bytes4 response) {
-                if (response != IERC1238Receiver.onERC1238Mint.selector) {
-                    revert("ERC1238: ERC1238Receiver rejected tokens");
-                }
-            } catch Error(string memory reason) {
-                revert(reason);
-            } catch {
-                revert("ERC1238: transfer to non ERC1238Receiver implementer");
+        try IERC1238Receiver(to).onERC1238Mint(minter, id, amount, data) returns (bytes4 response) {
+            if (response != IERC1238Receiver.onERC1238Mint.selector) {
+                revert("ERC1238: ERC1238Receiver rejected tokens");
             }
+        } catch Error(string memory reason) {
+            revert(reason);
+        } catch {
+            revert("ERC1238: transfer to non ERC1238Receiver implementer");
         }
     }
 
@@ -291,17 +349,15 @@ contract ERC1238 is IERC1238 {
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory data
-    ) internal {
-        if (to.isContract()) {
-            try IERC1238Receiver(to).onERC1238BatchMint(minter, ids, amounts, data) returns (bytes4 response) {
-                if (response != IERC1238Receiver.onERC1238BatchMint.selector) {
-                    revert("ERC1238: ERC1238Receiver rejected tokens");
-                }
-            } catch Error(string memory reason) {
-                revert(reason);
-            } catch {
-                revert("ERC1238: transfer to non ERC1238Receiver implementer");
+    ) private {
+        try IERC1238Receiver(to).onERC1238BatchMint(minter, ids, amounts, data) returns (bytes4 response) {
+            if (response != IERC1238Receiver.onERC1238BatchMint.selector) {
+                revert("ERC1238: ERC1238Receiver rejected tokens");
             }
+        } catch Error(string memory reason) {
+            revert(reason);
+        } catch {
+            revert("ERC1238: transfer to non ERC1238Receiver implementer");
         }
     }
 
