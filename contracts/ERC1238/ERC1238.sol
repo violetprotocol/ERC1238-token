@@ -125,22 +125,6 @@ contract ERC1238 is IERC1238 {
         baseURI = newBaseURI;
     }
 
-    function _mintBundle(
-        address[] memory to,
-        uint256[][] memory ids,
-        uint256[][] memory amounts,
-        bytes[] memory data
-    ) internal virtual {
-        for (uint256 i = 0; i < to.length; i++) {
-            if (to[i].isContract()) {
-                _mintBatchToContract(to[i], ids[i], amounts[i], data[i]);
-            } else {
-                (bytes32 r, bytes32 s, uint8 v) = splitSignature(data[i]);
-                _mintBatchToEOA(to[i], ids[i], amounts[i], v, r, s, data[i]);
-            }
-        }
-    }
-
     function _mintToEOA(
         address to,
         uint256 id,
@@ -157,6 +141,48 @@ contract ERC1238 is IERC1238 {
         _mint(to, id, amount, data);
     }
 
+    function _mintToContract(
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) internal virtual {
+        require(to.isContract(), "ERC1238: Recipient is not a contract");
+
+        _mint(to, id, amount, data);
+
+        _doSafeMintAcceptanceCheck(msg.sender, to, id, amount, data);
+    }
+
+    function _mintBundle(
+        address[] memory to,
+        uint256[][] memory ids,
+        uint256[][] memory amounts,
+        bytes[] memory data
+    ) internal virtual {
+        for (uint256 i = 0; i < to.length; i++) {
+            if (to[i].isContract()) {
+                _mintBatchToContract(to[i], ids[i], amounts[i], data[i]);
+            } else {
+                (bytes32 r, bytes32 s, uint8 v) = splitSignature(data[i]);
+                _mintBatchToEOA(to[i], ids[i], amounts[i], v, r, s, data[i]);
+            }
+        }
+    }
+
+    function _mintBatchToContract(
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts,
+        bytes memory data
+    ) internal virtual {
+        require(to.isContract(), "ERC1238: Recipient is not a contract");
+
+        _mintBatch(to, ids, amounts, data);
+
+        _doSafeBatchMintAcceptanceCheck(msg.sender, to, ids, amounts, data);
+    }
+
     function _mintBatchToEOA(
         address to,
         uint256[] memory ids,
@@ -171,32 +197,6 @@ contract ERC1238 is IERC1238 {
         _verifyMintingApproval(to, prefixedHash, v, r, s);
 
         _mintBatch(to, ids, amounts, data);
-    }
-
-    function _mintToContract(
-        address to,
-        uint256 id,
-        uint256 amount,
-        bytes memory data
-    ) internal virtual {
-        require(to.isContract(), "ERC1238: Recipient is not a contract");
-
-        _mint(to, id, amount, data);
-
-        _doSafeMintAcceptanceCheck(msg.sender, to, id, amount, data);
-    }
-
-    function _mintBatchToContract(
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    ) internal virtual {
-        require(to.isContract(), "ERC1238: Recipient is not a contract");
-
-        _mintBatch(to, ids, amounts, data);
-
-        _doSafeBatchMintAcceptanceCheck(msg.sender, to, ids, amounts, data);
     }
 
     /**
