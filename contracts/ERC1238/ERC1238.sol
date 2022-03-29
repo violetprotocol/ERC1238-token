@@ -83,6 +83,26 @@ contract ERC1238 is IERC1238 {
         return batchBalances;
     }
 
+    function getMintApprovalMessageHash(
+        address to,
+        uint256 id,
+        uint256 amount
+    ) public view returns (bytes32) {
+        return keccak256(abi.encode(to, id, amount, block.chainid, address(this)));
+    }
+
+    function getMintApprovalMessageHash(
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts
+    ) public view returns (bytes32) {
+        return keccak256(abi.encode(to, ids, amounts, block.chainid, address(this)));
+    }
+
+    function getEthSignedMessageHash(bytes32 _messageHash) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash));
+    }
+
     /**
      * @dev Sets a new URI for all token types, by relying on the token type ID
      * substitution mechanism as in EIP-1155
@@ -130,8 +150,9 @@ contract ERC1238 is IERC1238 {
         bytes32 s,
         bytes memory data
     ) internal virtual {
-        bytes32 mintHash = keccak256(abi.encode(to, id, amount, block.chainid, address(this)));
-        _verifyMintingApproval(to, mintHash, v, r, s);
+        bytes32 messageHash = getMintApprovalMessageHash(to, id, amount);
+        bytes32 prefixedHash = getEthSignedMessageHash(messageHash);
+        _verifyMintingApproval(to, prefixedHash, v, r, s);
 
         _mint(to, id, amount, data);
     }
@@ -145,8 +166,9 @@ contract ERC1238 is IERC1238 {
         bytes32 s,
         bytes memory data
     ) internal virtual {
-        bytes32 mintHash = keccak256(abi.encode(to, ids, amounts, block.chainid, address(this)));
-        _verifyMintingApproval(to, mintHash, v, r, s);
+        bytes32 messageHash = getMintApprovalMessageHash(to, ids, amounts);
+        bytes32 prefixedHash = getEthSignedMessageHash(messageHash);
+        _verifyMintingApproval(to, prefixedHash, v, r, s);
 
         _mintBatch(to, ids, amounts, data);
     }
