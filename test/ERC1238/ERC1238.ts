@@ -227,94 +227,96 @@ describe("ERC1238", function () {
      * BURNING
      */
 
-    // describe("_burn", () => {
-    //   it("should revert when buring the zero account's token", async () => {
-    //     await expect(erc1238Mock.connect(admin).burn(ZERO_ADDRESS, tokenId, burnAmount)).to.be.revertedWith(
-    //       "ERC1238: burn from the zero address",
-    //     );
-    //   });
+    describe("_burn", () => {
+      it("should revert when burning the zero account's token", async () => {
+        await expect(erc1238Mock.connect(admin).burn(ZERO_ADDRESS, tokenId, burnAmount)).to.be.revertedWith(
+          "ERC1238: burn from the zero address",
+        );
+      });
 
-    //   it("should revert when buring a non-existent token id", async () => {
-    //     await expect(erc1238Mock.connect(admin).burn(tokenRecipient.address, tokenId, burnAmount)).to.be.revertedWith(
-    //       "ERC1238: burn amount exceeds balance",
-    //     );
-    //   });
+      it("should revert when burning a non-existent token id", async () => {
+        await expect(erc1238Mock.connect(admin).burn(tokenRecipient.address, tokenId, burnAmount)).to.be.revertedWith(
+          "ERC1238: burn amount exceeds balance",
+        );
+      });
 
-    //   it("should revert when buring more than available balance", async () => {
-    //     const amountToMint = burnAmount.sub(1);
-    //     await erc1238Mock.mint(tokenRecipient.address, tokenId, amountToMint, data);
+      it("should revert when burning more than available balance", async () => {
+        const amountToMint = burnAmount.sub(1);
+        await erc1238Mock.mintToContract(smartContractRecipient.address, tokenId, amountToMint, data);
 
-    //     await expect(erc1238Mock.connect(admin).burn(tokenRecipient.address, tokenId, burnAmount)).to.be.revertedWith(
-    //       "ERC1238: burn amount exceeds balance",
-    //     );
-    //   });
+        await expect(
+          erc1238Mock.connect(admin).burn(smartContractRecipient.address, tokenId, burnAmount),
+        ).to.be.revertedWith("ERC1238: burn amount exceeds balance");
+      });
 
-    //   it("should burn the right amount of tokens", async () => {
-    //     const amountToMint = burnAmount.add(1);
+      it("should burn the right amount of tokens", async () => {
+        const amountToMint = burnAmount.add(1);
 
-    //     await erc1238Mock.mint(tokenRecipient.address, tokenId, amountToMint, data);
+        await erc1238Mock.mintToContract(smartContractRecipient.address, tokenId, amountToMint, data);
 
-    //     await erc1238Mock.connect(admin).burn(tokenRecipient.address, tokenId, burnAmount);
+        await erc1238Mock.connect(admin).burn(smartContractRecipient.address, tokenId, burnAmount);
 
-    //     expect(await erc1238Mock.balanceOf(tokenRecipient.address, tokenId)).to.eq(1);
-    //   });
+        expect(await erc1238Mock.balanceOf(smartContractRecipient.address, tokenId)).to.eq(1);
+      });
 
-    //   it("should emit a BurnSingle event", async () => {
-    //     await erc1238Mock.mint(tokenRecipient.address, tokenId, burnAmount, data);
+      it("should emit a BurnSingle event", async () => {
+        await erc1238Mock.mintToContract(smartContractRecipient.address, tokenId, burnAmount, data);
 
-    //     await expect(erc1238Mock.burn(tokenRecipient.address, tokenId, burnAmount))
-    //       .to.emit(erc1238Mock, "BurnSingle")
-    //       .withArgs(admin.address, tokenRecipient.address, tokenId, burnAmount);
-    //   });
-    // });
+        await expect(erc1238Mock.burn(smartContractRecipient.address, tokenId, burnAmount))
+          .to.emit(erc1238Mock, "BurnSingle")
+          .withArgs(admin.address, smartContractRecipient.address, tokenId, burnAmount);
+      });
+    });
 
-    // describe("_burnBatch", () => {
-    //   it("should revert when buring the zero account's token", async () => {
-    //     await expect(
-    //       erc1238Mock.connect(admin).burnBatch(ZERO_ADDRESS, tokenBatchIds, burnBatchAmounts),
-    //     ).to.be.revertedWith("ERC1238: burn from the zero address");
-    //   });
+    describe("_burnBatch", () => {
+      it("should revert when burning the zero account's token", async () => {
+        await expect(
+          erc1238Mock.connect(admin).burnBatch(ZERO_ADDRESS, tokenBatchIds, burnBatchAmounts),
+        ).to.be.revertedWith("ERC1238: burn from the zero address");
+      });
 
-    //   it("should revert if the length of inputs do not match", async () => {
-    //     await expect(
-    //       erc1238Mock.connect(admin).burnBatch(tokenBatchRecipient.address, tokenBatchIds.slice(1), burnBatchAmounts),
-    //     ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
+      it("should revert if the length of inputs do not match", async () => {
+        await expect(
+          erc1238Mock.connect(admin).burnBatch(tokenBatchRecipient.address, tokenBatchIds.slice(1), burnBatchAmounts),
+        ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
 
-    //     await expect(
-    //       erc1238Mock.connect(admin).burnBatch(tokenBatchRecipient.address, tokenBatchIds, burnBatchAmounts.slice(1)),
-    //     ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
-    //   });
+        await expect(
+          erc1238Mock.connect(admin).burnBatch(tokenBatchRecipient.address, tokenBatchIds, burnBatchAmounts.slice(1)),
+        ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
+      });
 
-    //   it("should revert when burning a non-existent token id", async () => {
-    //     await erc1238Mock
-    //       .connect(admin)
-    //       .mintBatch(tokenRecipient.address, tokenBatchIds.slice(1), burnBatchAmounts.slice(1), data);
+      it("should revert when burning a non-existent token id", async () => {
+        await erc1238Mock
+          .connect(admin)
+          .mintBatchToContract(smartContractRecipient.address, tokenBatchIds.slice(1), burnBatchAmounts.slice(1), data);
 
-    //     await expect(
-    //       erc1238Mock.connect(admin).burnBatch(tokenRecipient.address, tokenBatchIds, burnBatchAmounts),
-    //     ).to.be.revertedWith("ERC1238: burn amount exceeds balance");
-    //   });
+        await expect(
+          erc1238Mock.connect(admin).burnBatch(smartContractRecipient.address, tokenBatchIds, burnBatchAmounts),
+        ).to.be.revertedWith("ERC1238: burn amount exceeds balance");
+      });
 
-    //   it("should properly burn tokens", async () => {
-    //     await erc1238Mock.connect(admin).mintBatch(tokenRecipient.address, tokenBatchIds, mintBatchAmounts, data);
+      it("should properly burn tokens", async () => {
+        await erc1238Mock
+          .connect(admin)
+          .mintBatchToContract(smartContractRecipient.address, tokenBatchIds, mintBatchAmounts, data);
 
-    //     await erc1238Mock.connect(admin).burnBatch(tokenRecipient.address, tokenBatchIds, burnBatchAmounts);
+        await erc1238Mock.connect(admin).burnBatch(smartContractRecipient.address, tokenBatchIds, burnBatchAmounts);
 
-    //     tokenBatchIds.forEach(async (tokenId, i) =>
-    //       expect(await erc1238Mock.balanceOf(tokenRecipient.address, tokenId)).to.eq(
-    //         mintBatchAmounts[i].sub(burnBatchAmounts[i]),
-    //       ),
-    //     );
-    //   });
+        tokenBatchIds.forEach(async (tokenId, i) =>
+          expect(await erc1238Mock.balanceOf(smartContractRecipient.address, tokenId)).to.eq(
+            mintBatchAmounts[i].sub(burnBatchAmounts[i]),
+          ),
+        );
+      });
 
-    //   it("should emit a BurnBatch event", async () => {
-    //     await erc1238Mock.mintBatch(tokenRecipient.address, tokenBatchIds, mintBatchAmounts, data);
+      it("should emit a BurnBatch event", async () => {
+        await erc1238Mock.mintBatchToContract(smartContractRecipient.address, tokenBatchIds, mintBatchAmounts, data);
 
-    //     await expect(erc1238Mock.burnBatch(tokenRecipient.address, tokenBatchIds, burnBatchAmounts))
-    //       .to.emit(erc1238Mock, "BurnBatch")
-    //       .withArgs(admin.address, tokenRecipient.address, tokenBatchIds, burnBatchAmounts);
-    //   });
-    // });
+        await expect(erc1238Mock.burnBatch(smartContractRecipient.address, tokenBatchIds, burnBatchAmounts))
+          .to.emit(erc1238Mock, "BurnBatch")
+          .withArgs(admin.address, smartContractRecipient.address, tokenBatchIds, burnBatchAmounts);
+      });
+    });
 
     /*
      * URI
