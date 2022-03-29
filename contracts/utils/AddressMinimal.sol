@@ -25,8 +25,6 @@ library Address {
         // construction, since the code is only stored at the end of the
         // constructor execution.
 
-       return account.code.length > 0;
+        return account.code.length > 0;
     }
-
-   
 }
