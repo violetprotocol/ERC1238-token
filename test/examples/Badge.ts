@@ -61,20 +61,23 @@ describe("Badge", function () {
   });
 
   describe("Mint Bundle", () => {
+    let to: string[];
+    beforeEach(() => {
+      to = [signer1.address, contractRecipient.address, eoaRecipient.address];
+    });
+    const tokenBatchIds = [toBN("2000"), toBN("2010"), toBN("2020")];
+    const tokenBatchURIs = [
+      "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu",
+      "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiv",
+      "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiw",
+    ];
+    const mintBatchAmounts = [toBN("5000"), toBN("10000"), toBN("42195")];
+
+    const ids = [tokenBatchIds, tokenBatchIds, tokenBatchIds];
+    const amounts = [mintBatchAmounts, mintBatchAmounts, mintBatchAmounts];
+    const uris = [tokenBatchURIs, tokenBatchURIs, tokenBatchURIs];
+
     it("should mint a bundle to multiple addresses", async () => {
-      const tokenBatchIds = [toBN("2000"), toBN("2010"), toBN("2020")];
-      const tokenBatchURIs = [
-        "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu",
-        "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiv",
-        "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiw",
-      ];
-      const mintBatchAmounts = [toBN("5000"), toBN("10000"), toBN("42195")];
-
-      const to = [signer1.address, contractRecipient.address, eoaRecipient.address];
-      const ids = [tokenBatchIds, tokenBatchIds, tokenBatchIds];
-      const amounts = [mintBatchAmounts, mintBatchAmounts, mintBatchAmounts];
-      const uris = [tokenBatchURIs, tokenBatchURIs, tokenBatchURIs];
-
       const signatureFromSigner1 = await getMintApprovalSignature({
         erc1238Contract: badge,
         signer: signer1,
@@ -104,6 +107,29 @@ describe("Badge", function () {
           expect(await badge.tokenURI(id)).to.eq(uris[i][j]);
         }),
       );
+    });
+
+    it("should emit MintBatch events", async () => {
+      const signatureFromSigner1 = await getMintApprovalSignature({
+        erc1238Contract: badge,
+        signer: signer1,
+        ids: ids[0],
+        amounts: amounts[0],
+      });
+
+      const signatureFromEoaRecipient = await getMintApprovalSignature({
+        erc1238Contract: badge,
+        signer: eoaRecipient,
+        ids: ids[2],
+        amounts: amounts[2],
+      });
+
+      const data = [signatureFromSigner1.fullSignature, [], signatureFromEoaRecipient.fullSignature];
+
+      const tx = badge.mintBundle(to, ids, amounts, uris, data);
+      to.forEach(async (recipient, index) => {
+        await expect(tx).to.emit(badge, "MintBatch").withArgs(admin.address, recipient, ids[index], amounts[index]);
+      });
     });
   });
 });
