@@ -105,6 +105,22 @@ contract ERC1238 is IERC1238 {
         baseURI = newBaseURI;
     }
 
+    function _mintBundle(
+        address[] memory to,
+        uint256[][] memory ids,
+        uint256[][] memory amounts,
+        bytes[] memory data
+    ) internal virtual {
+        for (uint256 i = 0; i < to.length; i++) {
+            if (to[i].isContract()) {
+                _mintBatchToContract(to[i], ids[i], amounts[i], data[i]);
+            } else {
+                (bytes32 r, bytes32 s, uint8 v) = splitSignature(data[i]);
+                _mintBatchToEOA(to[i], ids[i], amounts[i], v, r, s, data[i]);
+            }
+        }
+    }
+
     function _mintToEOA(
         address to,
         uint256 id,
@@ -135,7 +151,7 @@ contract ERC1238 is IERC1238 {
         _mintBatch(to, ids, amounts, data);
     }
 
-    function _mintToSmartContract(
+    function _mintToContract(
         address to,
         uint256 id,
         uint256 amount,
@@ -148,7 +164,7 @@ contract ERC1238 is IERC1238 {
         _doSafeMintAcceptanceCheck(msg.sender, to, id, amount, data);
     }
 
-    function _mintBatchToSmartContract(
+    function _mintBatchToContract(
         address to,
         uint256[] memory ids,
         uint256[] memory amounts,
@@ -367,5 +383,37 @@ contract ERC1238 is IERC1238 {
         array[0] = element;
 
         return array;
+    }
+
+    function splitSignature(bytes memory sig)
+        public
+        pure
+        returns (
+            bytes32 r,
+            bytes32 s,
+            uint8 v
+        )
+    {
+        require(sig.length == 65, "invalid signature length");
+
+        assembly {
+            /*
+            First 32 bytes stores the length of the signature
+
+            add(sig, 32) = pointer of sig + 32
+            effectively, skips first 32 bytes of signature
+
+            mload(p) loads next 32 bytes starting at the memory address p into memory
+            */
+
+            // first 32 bytes, after the length prefix
+            r := mload(add(sig, 32))
+            // second 32 bytes
+            s := mload(add(sig, 64))
+            // final byte (first byte of the next 32 bytes)
+            v := byte(0, mload(add(sig, 96)))
+        }
+
+        // implicitly return (r, s, v)
     }
 }
