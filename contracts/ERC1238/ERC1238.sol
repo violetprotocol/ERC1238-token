@@ -87,7 +87,7 @@ contract ERC1238 is IERC1238 {
         address to,
         uint256 id,
         uint256 amount
-    ) public view returns (bytes32) {
+    ) public view override returns (bytes32) {
         return keccak256(abi.encode(to, id, amount, block.chainid, address(this)));
     }
 
@@ -95,7 +95,7 @@ contract ERC1238 is IERC1238 {
         address to,
         uint256[] memory ids,
         uint256[] memory amounts
-    ) public view returns (bytes32) {
+    ) public view override returns (bytes32) {
         return keccak256(abi.encode(to, ids, amounts, block.chainid, address(this)));
     }
 

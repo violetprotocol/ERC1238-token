@@ -46,4 +46,30 @@ interface IERC1238 {
         external
         view
         returns (uint256[] memory);
+
+    /**
+     * @dev Returns the hash of the mint approval message for a single token id and amount.
+     * Before being signed by an EOA to approve token minting and express consent,
+     * the hash returned by this function must be prefixed with "\x19Ethereum Signed Message:\n32"
+     * and hashed again.
+     *
+     */
+    function getMintApprovalMessageHash(
+        address to,
+        uint256 id,
+        uint256 amount
+    ) external view returns (bytes32);
+
+    /**
+     * @dev Returns the hash of the mint approval message for multiple ids and amounts.
+     * Before being signed by an EOA to approve token minting and express consent,
+     * the hash returned by this function must be prefixed with "\x19Ethereum Signed Message:\n32"
+     * and hashed again.
+     *
+     */
+    function getMintApprovalMessageHash(
+        address to,
+        uint256[] memory ids,
+        uint256[] memory amounts
+    ) external view returns (bytes32);
 }
