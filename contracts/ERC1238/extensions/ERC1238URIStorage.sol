@@ -38,6 +38,14 @@ abstract contract ERC1238URIStorage is IERC1238URIStorage, ERC1238 {
         emit URI(id, _tokenURI);
     }
 
+    function _setBatchTokenURI(uint256[] memory ids, string[] memory tokenURIs) internal {
+        require(ids.length == tokenURIs.length, "ERC1238Storage: ids and token URIs length mismatch");
+
+        for (uint256 i = 0; i < ids.length; i++) {
+            _setTokenURI(ids[i], tokenURIs[i]);
+        }
+    }
+
     /**
      * @dev Deletes the tokenURI for the tokens of type `id`.
      *
