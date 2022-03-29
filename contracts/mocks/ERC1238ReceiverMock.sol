@@ -5,9 +5,11 @@ pragma solidity ^0.8.0;
 import "../ERC1238/IERC1238Receiver.sol";
 
 contract ERC1238ReceiverMock is IERC1238Receiver {
-    bytes4 public constant ERC1238_ON_MINT = bytes4(keccak256("onERC1238Mint(address,uint256,uint256,bytes)"));
-    bytes4 public constant ERC1238_ON_BATCH_MINT =
-        bytes4(keccak256("onERC1238BatchMint(address,uint256[],uint256[],bytes)"));
+    //  bytes4(keccak256("onERC1238Mint(address,uint256,uint256,bytes)"))
+    bytes4 public constant ERC1238_ON_MINT = 0x45ed75d5;
+
+    // bytes4(keccak256("onERC1238BatchMint(address,uint256[],uint256[],bytes)"))
+    bytes4 public constant ERC1238_ON_BATCH_MINT = 0xc0bfec68;
 
     function onERC1238Mint(
         address minter,
