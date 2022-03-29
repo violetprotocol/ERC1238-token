@@ -9,6 +9,7 @@ import { toBN, TOKEN_ID_ZERO, ZERO_ADDRESS } from "../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
 
+// TODO: add tests for _mintBundle
 describe("ERC1238", function () {
   let erc1238Mock: ERC1238Mock;
   let admin: SignerWithAddress;
