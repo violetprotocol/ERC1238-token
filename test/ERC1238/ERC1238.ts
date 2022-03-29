@@ -1,46 +1,13 @@
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { expect } from "chai";
-import { BigNumberish, Signature } from "ethers";
 import { artifacts, ethers, waffle } from "hardhat";
 import type { Artifact } from "hardhat/types";
 import type { ERC1238Mock } from "../../src/types/ERC1238Mock";
 import type { ERC1238ReceiverMock } from "../../src/types/ERC1238ReceiverMock";
+import { getMintApprovalSignature } from "../utils/signing";
 import { toBN, TOKEN_ID_ZERO, ZERO_ADDRESS } from "../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
-
-function isBigNumberish(bn: BigNumberish | BigNumberish[]): bn is BigNumberish {
-  return !Array.isArray(bn);
-}
-
-const getMintApprovalSignature = async ({
-  signer,
-  erc1238Contract,
-  ids,
-  amounts,
-}: {
-  signer: SignerWithAddress;
-  erc1238Contract: ERC1238Mock;
-  ids: BigNumberish | BigNumberish[];
-  amounts: BigNumberish | BigNumberish[];
-}): Promise<Signature> => {
-  let hash;
-  if (!isBigNumberish(ids) && !isBigNumberish(amounts)) {
-    hash = await erc1238Contract["getMintApprovalMessageHash(address,uint256[],uint256[])"](
-      signer.address,
-      ids,
-      amounts,
-    );
-  } else if (isBigNumberish(ids) && isBigNumberish(amounts)) {
-    hash = await erc1238Contract["getMintApprovalMessageHash(address,uint256,uint256)"](signer.address, ids, amounts);
-  } else {
-    hash = "0x";
-  }
-  const bytesHash = ethers.utils.arrayify(hash);
-  const sig = await signer.signMessage(bytesHash);
-
-  return ethers.utils.splitSignature(sig);
-};
 
 describe("ERC1238", function () {
   let erc1238Mock: ERC1238Mock;
