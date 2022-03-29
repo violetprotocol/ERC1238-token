@@ -62,64 +62,6 @@ abstract contract ERC1238URIStorage is IERC1238URIStorage, ERC1238 {
     }
 
     /**
-     * @dev Creates `amount` tokens of token type `id` and URI `uri`, and assigns them to `to`.
-     *
-     * Emits a {MintSingle} event.
-     *
-     * Requirements:
-     *
-     * - `to` cannot be the zero address.
-     * - If `to` refers to a smart contract, it must implement {IERC1238Receiver-onERC1238Mint} and return the
-     * acceptance magic value.
-     */
-    function _mintWithURI(
-        address to,
-        uint256 id,
-        uint256 amount,
-        string memory uri,
-        bytes memory data
-    ) internal virtual {
-        _mint(to, id, amount, data);
-        _setTokenURI(id, uri);
-    }
-
-    /**
-     * @dev [Batched] version of {_mintWithURI}.
-     *
-     * Requirements:
-     *
-     * - `ids` and `amounts` must have the same length.
-     * - `ids` and `uris` must have the same length.
-     *
-     * Emits a {MintBatch} event.
-     */
-    function _mintBatchWithURI(
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        string[] memory uris,
-        bytes memory data
-    ) internal virtual {
-        require(to != address(0), "ERC1238: mint to the zero address");
-        require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
-        require(ids.length == uris.length, "ERC1238: ids and URIs length mismatch");
-
-        address minter = msg.sender;
-
-        for (uint256 i = 0; i < ids.length; i++) {
-            _beforeMint(minter, to, ids[i], amounts[i], data);
-
-            _setTokenURI(ids[i], uris[i]);
-
-            _balances[ids[i]][to] += amounts[i];
-        }
-
-        emit MintBatch(minter, to, ids, amounts);
-
-        _doSafeBatchMintAcceptanceCheck(minter, to, ids, amounts, data);
-    }
-
-    /**
      * @dev Destroys `amount` of tokens with id `id` owned by `from` and deletes the associated URI.
      *
      * Requirements:
