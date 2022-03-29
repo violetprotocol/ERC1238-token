@@ -16,21 +16,23 @@ function isBigNumberish(bn: BigNumberish | BigNumberish[]): bn is BigNumberish {
 const getMintApprovalSignature = async ({
   signer,
   erc1238Contract,
-  to,
   ids,
   amounts,
 }: {
   signer: SignerWithAddress;
   erc1238Contract: ERC1238Mock;
-  to: string;
   ids: BigNumberish | BigNumberish[];
   amounts: BigNumberish | BigNumberish[];
 }): Promise<Signature> => {
   let hash;
   if (!isBigNumberish(ids) && !isBigNumberish(amounts)) {
-    hash = await erc1238Contract["getMintApprovalMessageHash(address,uint256[],uint256[])"](to, ids, amounts);
+    hash = await erc1238Contract["getMintApprovalMessageHash(address,uint256[],uint256[])"](
+      signer.address,
+      ids,
+      amounts,
+    );
   } else if (isBigNumberish(ids) && isBigNumberish(amounts)) {
-    hash = await erc1238Contract["getMintApprovalMessageHash(address,uint256,uint256)"](to, ids, amounts);
+    hash = await erc1238Contract["getMintApprovalMessageHash(address,uint256,uint256)"](signer.address, ids, amounts);
   } else {
     hash = "0x";
   }
@@ -85,7 +87,6 @@ describe("ERC1238", function () {
         ({ v, r, s } = await getMintApprovalSignature({
           signer: tokenRecipient,
           erc1238Contract: erc1238Mock,
-          to: tokenRecipient.address,
           ids: tokenId,
           amounts: mintAmount,
         }));
@@ -129,53 +130,58 @@ describe("ERC1238", function () {
       });
     });
 
-    // describe("_mintBatch", () => {
-    //   let v: number;
-    //   let r: string;
-    //   let s: string;
-    //   beforeEach(async () => {
-    //     ({ v, r, s } = await getMintApprovalSignature({
-    //       signer: tokenRecipient,
-    //       erc1238Contract: erc1238Mock,
-    //       to: tokenRecipient.address,
-    //       ids: tokenBatchIds,
-    //       amounts: mintBatchAmounts,
-    //     }));
-    //   });
-    //   it("should revert with the zero address", async () => {
-    //     await expect(
-    //       erc1238Mock.connect(admin).mintBatch(ZERO_ADDRESS, tokenBatchIds, mintBatchAmounts, data),
-    //     ).to.be.revertedWith("ERC1238: mint to the zero address");
-    //   });
+    describe("_mintBatchToEOA", () => {
+      let v: number;
+      let r: string;
+      let s: string;
 
-    //   it("should revert if the length of inputs do not match", async () => {
-    //     await expect(
-    //       erc1238Mock
-    //         .connect(admin)
-    //         .mintBatch(tokenBatchRecipient.address, tokenBatchIds.slice(1), mintBatchAmounts, data),
-    //     ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
+      beforeEach(async () => {
+        ({ v, r, s } = await getMintApprovalSignature({
+          signer: tokenBatchRecipient,
+          erc1238Contract: erc1238Mock,
+          ids: tokenBatchIds,
+          amounts: mintBatchAmounts,
+        }));
+      });
 
-    //     await expect(
-    //       erc1238Mock
-    //         .connect(admin)
-    //         .mintBatch(tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts.slice(1), data),
-    //     ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
-    //   });
+      it("should revert with an invalid signature", async () => {
+        await expect(
+          erc1238Mock.connect(admin).mintBatchToEOA(ZERO_ADDRESS, tokenBatchIds, mintBatchAmounts, v, r, s, data),
+        ).to.be.revertedWith("ERC1238: Invalid signature for minting approval");
+      });
 
-    //   it("should credit the minted tokens", async () => {
-    //     await erc1238Mock.connect(admin).mintBatch(tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts, data);
+      it("should revert if the length of inputs do not match", async () => {
+        ({ v, r, s } = await getMintApprovalSignature({
+          signer: tokenBatchRecipient,
+          erc1238Contract: erc1238Mock,
+          ids: tokenBatchIds.slice(1),
+          amounts: mintBatchAmounts,
+        }));
+        await expect(
+          erc1238Mock
+            .connect(admin)
+            .mintBatchToEOA(tokenBatchRecipient.address, tokenBatchIds.slice(1), mintBatchAmounts, v, r, s, data),
+        ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
+      });
 
-    //     tokenBatchIds.forEach(async (tokenId, index) =>
-    //       expect(await erc1238Mock.balanceOf(tokenBatchRecipient.address, tokenId)).to.eq(mintBatchAmounts[index]),
-    //     );
-    //   });
+      it("should credit the minted tokens", async () => {
+        await erc1238Mock
+          .connect(admin)
+          .mintBatchToEOA(tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts, v, r, s, data);
 
-    //   it("should emit a MintBatch event", async () => {
-    //     await expect(erc1238Mock.mintBatch(tokenRecipient.address, tokenBatchIds, mintBatchAmounts, data))
-    //       .to.emit(erc1238Mock, "MintBatch")
-    //       .withArgs(admin.address, tokenRecipient.address, tokenBatchIds, mintBatchAmounts);
-    //   });
-    // });
+        tokenBatchIds.forEach(async (tokenId, index) =>
+          expect(await erc1238Mock.balanceOf(tokenBatchRecipient.address, tokenId)).to.eq(mintBatchAmounts[index]),
+        );
+      });
+
+      it("should emit a MintBatch event", async () => {
+        await expect(
+          erc1238Mock.mintBatchToEOA(tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts, v, r, s, data),
+        )
+          .to.emit(erc1238Mock, "MintBatch")
+          .withArgs(admin.address, tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts);
+      });
+    });
 
     /*
      * BURNING
