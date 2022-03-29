@@ -122,6 +122,12 @@ describe("ERC1238", function () {
         expect(balance).to.eq(mintAmount);
       });
 
+      it("should revert if the recipient is not a contract", async () => {
+        await expect(
+          erc1238Mock.mintToContract(tokenRecipient.address, TOKEN_ID_ZERO, mintAmount, data),
+        ).to.be.revertedWith("ERC1238: Recipient is not a contract");
+      });
+
       it("should revert if the smart contract does not accept the tokens", async () => {
         // ERC1238ReceiverMock is set to reject tokens with id 0
         await expect(
@@ -180,6 +186,40 @@ describe("ERC1238", function () {
         )
           .to.emit(erc1238Mock, "MintBatch")
           .withArgs(admin.address, tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts);
+      });
+    });
+
+    describe("_mintBatchToContract", () => {
+      it("should revert if the length of inputs do not match", async () => {
+        await expect(
+          erc1238Mock
+            .connect(admin)
+            .mintBatchToContract(smartContractRecipient.address, tokenBatchIds.slice(1), mintBatchAmounts, data),
+        ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
+      });
+
+      it("should revert if the recipient is not a contract", async () => {
+        await expect(
+          erc1238Mock.mintBatchToContract(tokenRecipient.address, tokenBatchIds, mintBatchAmounts, data),
+        ).to.be.revertedWith("ERC1238: Recipient is not a contract");
+      });
+
+      it("should credit the minted tokens", async () => {
+        await erc1238Mock
+          .connect(admin)
+          .mintBatchToContract(smartContractRecipient.address, tokenBatchIds, mintBatchAmounts, data);
+
+        tokenBatchIds.forEach(async (tokenId, index) =>
+          expect(await erc1238Mock.balanceOf(smartContractRecipient.address, tokenId)).to.eq(mintBatchAmounts[index]),
+        );
+      });
+
+      it("should emit a MintBatch event", async () => {
+        await expect(
+          erc1238Mock.mintBatchToContract(smartContractRecipient.address, tokenBatchIds, mintBatchAmounts, data),
+        )
+          .to.emit(erc1238Mock, "MintBatch")
+          .withArgs(admin.address, smartContractRecipient.address, tokenBatchIds, mintBatchAmounts);
       });
     });
 

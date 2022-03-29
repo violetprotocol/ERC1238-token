@@ -52,6 +52,15 @@ contract ERC1238Mock is ERC1238 {
         _mintBatchToEOA(to, ids, amounts, v, r, s, data);
     }
 
+    function mintBatchToContract(
+        address to,
+        uint256[] calldata ids,
+        uint256[] calldata amounts,
+        bytes memory data
+    ) external {
+        _mintBatchToContract(to, ids, amounts, data);
+    }
+
     function burn(
         address owner,
         uint256 id,
