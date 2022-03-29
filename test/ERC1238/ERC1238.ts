@@ -4,7 +4,8 @@ import { BigNumberish, Signature } from "ethers";
 import { artifacts, ethers, waffle } from "hardhat";
 import type { Artifact } from "hardhat/types";
 import type { ERC1238Mock } from "../../src/types/ERC1238Mock";
-import { toBN, ZERO_ADDRESS } from "../utils/test-utils";
+import type { ERC1238ReceiverMock } from "../../src/types/ERC1238ReceiverMock";
+import { toBN, TOKEN_ID_ZERO, ZERO_ADDRESS } from "../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
 
@@ -44,6 +45,7 @@ describe("ERC1238", function () {
   let admin: SignerWithAddress;
   let tokenRecipient: SignerWithAddress;
   let tokenBatchRecipient: SignerWithAddress;
+  let smartContractRecipient: ERC1238ReceiverMock;
 
   before(async function () {
     const signers: SignerWithAddress[] = await ethers.getSigners();
@@ -55,6 +57,10 @@ describe("ERC1238", function () {
   beforeEach(async function () {
     const ERC1238MockArtifact: Artifact = await artifacts.readArtifact("ERC1238Mock");
     erc1238Mock = <ERC1238Mock>await waffle.deployContract(admin, ERC1238MockArtifact, [BASE_URI]);
+    const ERC1238ReceiverMockArtifact: Artifact = await artifacts.readArtifact("ERC1238ReceiverMock");
+    smartContractRecipient = <ERC1238ReceiverMock>(
+      await waffle.deployContract(tokenRecipient, ERC1238ReceiverMockArtifact)
+    );
   });
 
   describe("internal functions", () => {
@@ -106,6 +112,23 @@ describe("ERC1238", function () {
       });
     });
 
+    describe("_mintToContract", () => {
+      it("should credit the amount of tokens", async () => {
+        await erc1238Mock.mintToContract(smartContractRecipient.address, tokenId, mintAmount, data);
+
+        const balance = await erc1238Mock.balanceOf(smartContractRecipient.address, tokenId);
+
+        expect(balance).to.eq(mintAmount);
+      });
+
+      it("should revert if the smart contract does not accept the tokens", async () => {
+        // ERC1238ReceiverMock is set to reject tokens with id 0
+        await expect(
+          erc1238Mock.mintToContract(smartContractRecipient.address, TOKEN_ID_ZERO, mintAmount, data),
+        ).to.be.revertedWith("ERC1238: ERC1238Receiver rejected tokens");
+      });
+    });
+
     // describe("_mintBatch", () => {
     //   let v: number;
     //   let r: string;
@@ -115,8 +138,8 @@ describe("ERC1238", function () {
     //       signer: tokenRecipient,
     //       erc1238Contract: erc1238Mock,
     //       to: tokenRecipient.address,
-    //       ids: tokenId,
-    //       amounts: mintAmount,
+    //       ids: tokenBatchIds,
+    //       amounts: mintBatchAmounts,
     //     }));
     //   });
     //   it("should revert with the zero address", async () => {
