@@ -61,26 +61,43 @@ contract ERC1238 is IERC1238 {
     /**
      * @dev See {IERC1238-balanceOfBatch}.
      *
-     * Requirements:
-     *
-     * - `accounts` and `ids` must have the same length.
      */
-    function balanceOfBatch(address[] memory accounts, uint256[] memory ids)
+    function balanceOfBatch(address account, uint256[] memory ids)
         public
         view
         virtual
         override
         returns (uint256[] memory)
     {
-        require(accounts.length == ids.length, "ERC1238: accounts and ids length mismatch");
+        uint256[] memory batchBalances = new uint256[](ids.length);
 
-        uint256[] memory batchBalances = new uint256[](accounts.length);
-
-        for (uint256 i = 0; i < accounts.length; ++i) {
-            batchBalances[i] = balanceOf(accounts[i], ids[i]);
+        uint256 length = ids.length;
+        for (uint256 i = 0; i < length; ++i) {
+            batchBalances[i] = balanceOf(account, ids[i]);
         }
 
         return batchBalances;
+    }
+
+    /**
+     * @dev See {IERC1238-balanceOfBundle}.
+     *
+     */
+    function balanceOfBundle(address[] memory accounts, uint256[][] memory ids)
+        public
+        view
+        virtual
+        override
+        returns (uint256[][] memory)
+    {
+        uint256[][] memory bundleBalances = new uint256[][](accounts.length);
+
+        uint256 length = accounts.length;
+        for (uint256 i = 0; i < length; ++i) {
+            bundleBalances[i] = balanceOfBatch(accounts[i], ids[i]);
+        }
+
+        return bundleBalances;
     }
 
     function getMintApprovalMessageHash(

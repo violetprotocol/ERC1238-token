@@ -38,14 +38,20 @@ interface IERC1238 {
     /**
      * @dev [Batched] version of {balanceOf}.
      *
-     * Requirements:
-     *
-     * - `accounts` and `ids` must have the same length.
      */
-    function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids)
+    function balanceOfBatch(address account, uint256[] calldata ids) external view returns (uint256[] memory);
+
+    /**
+     * @dev [Batched] version of {balanceOf}.
+     *
+     * Reuirements:
+     * - `accounts` and `ids` must have the same length.
+     *
+     */
+    function balanceOfBundle(address[] calldata accounts, uint256[][] calldata ids)
         external
         view
-        returns (uint256[] memory);
+        returns (uint256[][] memory);
 
     /**
      * @dev Returns the hash of the mint approval message for a single token id and amount.
