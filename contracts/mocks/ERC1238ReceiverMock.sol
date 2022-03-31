@@ -12,11 +12,11 @@ contract ERC1238ReceiverMock is IERC1238Receiver {
     bytes4 public constant ERC1238_ON_BATCH_MINT = 0xc0bfec68;
 
     function onERC1238Mint(
-        address minter,
+        address,
         uint256 id,
-        uint256 amount,
-        bytes calldata data
-    ) external override returns (bytes4) {
+        uint256,
+        bytes calldata
+    ) external pure override returns (bytes4) {
         if (id == 0) {
             return bytes4(0);
         }
@@ -25,11 +25,11 @@ contract ERC1238ReceiverMock is IERC1238Receiver {
     }
 
     function onERC1238BatchMint(
-        address minter,
+        address,
         uint256[] calldata ids,
-        uint256[] calldata amounts,
-        bytes calldata data
-    ) external override returns (bytes4) {
+        uint256[] calldata,
+        bytes calldata
+    ) external pure override returns (bytes4) {
         if (ids[0] == 0) {
             return bytes4(0);
         }
