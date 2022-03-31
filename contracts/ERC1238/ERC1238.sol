@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "./IERC1238.sol";
+import "./ERC1238Approval.sol";
 import "./IERC1238Receiver.sol";
 import "../utils/AddressMinimal.sol";
 
@@ -10,7 +11,7 @@ import "../utils/AddressMinimal.sol";
  * @dev Implementation proposal for non-transferable (Badge) tokens
  * See https://github.com/ethereum/EIPs/issues/1238
  */
-contract ERC1238 is IERC1238 {
+contract ERC1238 is IERC1238, ERC1238Approval {
     using Address for address;
 
     // Mapping from token ID to account balances
@@ -100,26 +101,6 @@ contract ERC1238 is IERC1238 {
         return bundleBalances;
     }
 
-    function getMintApprovalMessageHash(
-        address to,
-        uint256 id,
-        uint256 amount
-    ) public view override returns (bytes32) {
-        return keccak256(abi.encode(to, id, amount, block.chainid, address(this)));
-    }
-
-    function getMintBatchApprovalMessageHash(
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts
-    ) public view override returns (bytes32) {
-        return keccak256(abi.encode(to, ids, amounts, block.chainid, address(this)));
-    }
-
-    function getEthSignedMessageHash(bytes32 _messageHash) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash));
-    }
-
     /**
      * @dev Sets a new URI for all token types, by relying on the token type ID
      * substitution mechanism as in EIP-1155
@@ -152,8 +133,7 @@ contract ERC1238 is IERC1238 {
         bytes memory data
     ) internal virtual {
         bytes32 messageHash = getMintApprovalMessageHash(to, id, amount);
-        bytes32 prefixedHash = getEthSignedMessageHash(messageHash);
-        _verifyMintingApproval(to, prefixedHash, v, r, s);
+        _verifyMintingApproval(to, messageHash, v, r, s);
 
         _mint(to, id, amount, data);
     }
@@ -210,8 +190,7 @@ contract ERC1238 is IERC1238 {
         bytes memory data
     ) internal virtual {
         bytes32 messageHash = getMintBatchApprovalMessageHash(to, ids, amounts);
-        bytes32 prefixedHash = getEthSignedMessageHash(messageHash);
-        _verifyMintingApproval(to, prefixedHash, v, r, s);
+        _verifyMintingApproval(to, messageHash, v, r, s);
 
         _mintBatch(to, ids, amounts, data);
     }
@@ -369,16 +348,6 @@ contract ERC1238 is IERC1238 {
         uint256 id,
         uint256 amount
     ) internal virtual {}
-
-    function _verifyMintingApproval(
-        address to,
-        bytes32 mintHash,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) private pure {
-        require(to == ecrecover(mintHash, v, r, s), "ERC1238: Invalid signature for minting approval");
-    }
 
     function _doSafeMintAcceptanceCheck(
         address minter,

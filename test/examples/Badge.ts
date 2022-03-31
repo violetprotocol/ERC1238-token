@@ -2,9 +2,10 @@ import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signe
 import { expect } from "chai";
 import { artifacts, ethers, waffle } from "hardhat";
 import type { Artifact } from "hardhat/types";
+import { chainIds } from "../../hardhat.config";
 import type { Badge } from "../../src/types/Badge";
 import { ERC1238ReceiverMock } from "../../src/types/ERC1238ReceiverMock";
-import { getMintApprovalSignature } from "../utils/signing";
+import { getMintBatchApprovalSignature } from "../../src/utils/ERC1238Approval";
 import { toBN } from "../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
@@ -12,6 +13,7 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 // ~ WIP! ~
 describe("Badge", function () {
+  const chainId = chainIds.hardhat;
   let badge: Badge;
   let admin: SignerWithAddress;
   let signer1: SignerWithAddress;
@@ -78,15 +80,17 @@ describe("Badge", function () {
     const uris = [tokenBatchURIs, tokenBatchURIs, tokenBatchURIs];
 
     it("should mint a bundle to multiple addresses", async () => {
-      const signatureFromSigner1 = await getMintApprovalSignature({
-        erc1238Contract: badge,
+      const signatureFromSigner1 = await getMintBatchApprovalSignature({
+        erc1238ContractAddress: badge.address,
+        chainId,
         signer: signer1,
         ids: ids[0],
         amounts: amounts[0],
       });
 
-      const signatureFromEoaRecipient = await getMintApprovalSignature({
-        erc1238Contract: badge,
+      const signatureFromEoaRecipient = await getMintBatchApprovalSignature({
+        erc1238ContractAddress: badge.address,
+        chainId,
         signer: eoaRecipient,
         ids: ids[2],
         amounts: amounts[2],
@@ -110,15 +114,17 @@ describe("Badge", function () {
     });
 
     it("should emit MintBatch events", async () => {
-      const signatureFromSigner1 = await getMintApprovalSignature({
-        erc1238Contract: badge,
+      const signatureFromSigner1 = await getMintBatchApprovalSignature({
+        erc1238ContractAddress: badge.address,
+        chainId,
         signer: signer1,
         ids: ids[0],
         amounts: amounts[0],
       });
 
-      const signatureFromEoaRecipient = await getMintApprovalSignature({
-        erc1238Contract: badge,
+      const signatureFromEoaRecipient = await getMintBatchApprovalSignature({
+        erc1238ContractAddress: badge.address,
+        chainId,
         signer: eoaRecipient,
         ids: ids[2],
         amounts: amounts[2],
@@ -127,9 +133,10 @@ describe("Badge", function () {
       const data = [signatureFromSigner1.fullSignature, [], signatureFromEoaRecipient.fullSignature];
 
       const tx = badge.mintBundle(to, ids, amounts, uris, data);
-      to.forEach(async (recipient, index) => {
-        await expect(tx).to.emit(badge, "MintBatch").withArgs(admin.address, recipient, ids[index], amounts[index]);
-      });
+
+      await expect(tx).to.emit(badge, "MintBatch").withArgs(admin.address, to[0], ids[0], amounts[0]);
+      await expect(tx).to.emit(badge, "MintBatch").withArgs(admin.address, to[1], ids[1], amounts[1]);
+      await expect(tx).to.emit(badge, "MintBatch").withArgs(admin.address, to[2], ids[2], amounts[2]);
     });
   });
 });
