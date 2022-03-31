@@ -73,7 +73,7 @@ interface IERC1238 {
      * and hashed again.
      *
      */
-    function getMintApprovalMessageHash(
+    function getMintBatchApprovalMessageHash(
         address to,
         uint256[] memory ids,
         uint256[] memory amounts

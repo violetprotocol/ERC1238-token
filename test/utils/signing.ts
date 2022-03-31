@@ -20,13 +20,9 @@ export const getMintApprovalSignature = async ({
 }): Promise<Signature & { fullSignature: string }> => {
   let hash;
   if (!isBigNumberish(ids) && !isBigNumberish(amounts)) {
-    hash = await erc1238Contract["getMintApprovalMessageHash(address,uint256[],uint256[])"](
-      signer.address,
-      ids,
-      amounts,
-    );
+    hash = await erc1238Contract.getMintBatchApprovalMessageHash(signer.address, ids, amounts);
   } else if (isBigNumberish(ids) && isBigNumberish(amounts)) {
-    hash = await erc1238Contract["getMintApprovalMessageHash(address,uint256,uint256)"](signer.address, ids, amounts);
+    hash = await erc1238Contract.getMintApprovalMessageHash(signer.address, ids, amounts);
   } else {
     hash = "0x";
   }

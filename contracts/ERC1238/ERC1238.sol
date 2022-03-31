@@ -108,7 +108,7 @@ contract ERC1238 is IERC1238 {
         return keccak256(abi.encode(to, id, amount, block.chainid, address(this)));
     }
 
-    function getMintApprovalMessageHash(
+    function getMintBatchApprovalMessageHash(
         address to,
         uint256[] memory ids,
         uint256[] memory amounts
@@ -209,7 +209,7 @@ contract ERC1238 is IERC1238 {
         bytes32 s,
         bytes memory data
     ) internal virtual {
-        bytes32 messageHash = getMintApprovalMessageHash(to, ids, amounts);
+        bytes32 messageHash = getMintBatchApprovalMessageHash(to, ids, amounts);
         bytes32 prefixedHash = getEthSignedMessageHash(messageHash);
         _verifyMintingApproval(to, prefixedHash, v, r, s);
 
