@@ -123,6 +123,40 @@ contract ERC1238 is IERC1238, ERC1238Approval {
         baseURI = newBaseURI;
     }
 
+    /**
+     * @dev Creates `amount` tokens of token type `id`, and assigns them to a smart contract (to).
+     *
+     *
+     * Requirements:
+     * - `to` must be a smart contract and must implement {IERC1238Receiver-onERC1238BatchMint} and return the
+     * acceptance magic value.
+     *
+     * Emits a {MintSingle} event.
+     */
+    function _mintToContract(
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) internal virtual {
+        require(to.isContract(), "ERC1238: Recipient is not a contract");
+
+        _mint(to, id, amount, data);
+
+        _doSafeMintAcceptanceCheck(msg.sender, to, id, amount, data);
+    }
+
+    /**
+     * @dev Creates `amount` tokens of token type `id`, and assigns them to the
+     * Externally Owned Account (to).
+     *
+     * Requirements:
+     *
+     * - `v`, `r` and `s` must be a EIP712 signature from `to` as defined by ERC1238Approval to
+     * approve the minting transaction.
+     *
+     * Emits a {MintSingle} event.
+     */
     function _mintToEOA(
         address to,
         uint256 id,
@@ -138,35 +172,17 @@ contract ERC1238 is IERC1238, ERC1238Approval {
         _mint(to, id, amount, data);
     }
 
-    function _mintToContract(
-        address to,
-        uint256 id,
-        uint256 amount,
-        bytes memory data
-    ) internal virtual {
-        require(to.isContract(), "ERC1238: Recipient is not a contract");
-
-        _mint(to, id, amount, data);
-
-        _doSafeMintAcceptanceCheck(msg.sender, to, id, amount, data);
-    }
-
-    function _mintBundle(
-        address[] memory to,
-        uint256[][] memory ids,
-        uint256[][] memory amounts,
-        bytes[] memory data
-    ) internal virtual {
-        for (uint256 i = 0; i < to.length; i++) {
-            if (to[i].isContract()) {
-                _mintBatchToContract(to[i], ids[i], amounts[i], data[i]);
-            } else {
-                (bytes32 r, bytes32 s, uint8 v) = splitSignature(data[i]);
-                _mintBatchToEOA(to[i], ids[i], amounts[i], v, r, s, data[i]);
-            }
-        }
-    }
-
+    /**
+     * @dev [Batched] version of {_mintToContract}. A batch specifies an array of token `id` and
+     * the amount of tokens for each.
+     *
+     * Requirements:
+     * - `to` must be a smart contract and must implement {IERC1238Receiver-onERC1238BatchMint} and return the
+     * acceptance magic value.
+     * - `ids` and `amounts` must have the same length.
+     *
+     * Emits a {MintBatch} event.
+     */
     function _mintBatchToContract(
         address to,
         uint256[] memory ids,
@@ -180,6 +196,16 @@ contract ERC1238 is IERC1238, ERC1238Approval {
         _doSafeBatchMintAcceptanceCheck(msg.sender, to, ids, amounts, data);
     }
 
+    /**
+     * @dev [Batched] version of {_mintToEOA}. A batch specifies an array of token `id` and
+     * the amount of tokens for each.
+     *
+     * Requirements:
+     * - `v`, `r` and `s` must be a EIP712 signature from `to` as defined by ERC1238Approval to
+     * approve the batch minting transaction.
+     *
+     * Emits a {MintBatch} event.
+     */
     function _mintBatchToEOA(
         address to,
         uint256[] memory ids,
@@ -196,13 +222,39 @@ contract ERC1238 is IERC1238, ERC1238Approval {
     }
 
     /**
+     * @dev Mints a bundle, which can be viewed as minting several batches
+     * to an array of addresses in one transaction.
+     *
+     * Requirements:
+     * - `to` can be a combination of smart contract addresses and EOAs.
+     * - If `to` is not a contract, an EIP712 signature from `to` as defined by ERC1238Approval
+     * must be passed at the right index in `data`.
+     *
+     * Emits multiple {MintBatch} events.
+     */
+    function _mintBundle(
+        address[] memory to,
+        uint256[][] memory ids,
+        uint256[][] memory amounts,
+        bytes[] memory data
+    ) internal virtual {
+        for (uint256 i = 0; i < to.length; i++) {
+            if (to[i].isContract()) {
+                _mintBatchToContract(to[i], ids[i], amounts[i], data[i]);
+            } else {
+                (bytes32 r, bytes32 s, uint8 v) = splitSignature(data[i]);
+                _mintBatchToEOA(to[i], ids[i], amounts[i], v, r, s, data[i]);
+            }
+        }
+    }
+
+    /**
      * @dev Creates `amount` tokens of token type `id`, and assigns them to `to`.
      *
      * Emits a {MintSingle} event.
      *
      * Requirements:
      *
-     * - `to` cannot be the zero address.
      * - If `to` refers to a smart contract, it must implement {IERC1238Receiver-onERC1238Mint} and return the
      * acceptance magic value.
      *
@@ -214,13 +266,12 @@ contract ERC1238 is IERC1238, ERC1238Approval {
         uint256 amount,
         bytes memory data
     ) private {
-        require(to != address(0), "ERC1238: mint to the zero address");
-
         address minter = msg.sender;
 
         _beforeMint(minter, to, id, amount, data);
 
         _balances[id][to] += amount;
+
         emit MintSingle(minter, to, id, amount);
     }
 
@@ -230,8 +281,6 @@ contract ERC1238 is IERC1238, ERC1238Approval {
      * Requirements:
      *
      * - `ids` and `amounts` must have the same length.
-     * - If `to` refers to a smart contract, it must implement {IERC1238Receiver-onERC1238BatchMint} and return the
-     * acceptance magic value.
      *
      * Emits a {MintBatch} event.
      */
@@ -241,7 +290,6 @@ contract ERC1238 is IERC1238, ERC1238Approval {
         uint256[] memory amounts,
         bytes memory data
     ) private {
-        require(to != address(0), "ERC1238: mint to the zero address");
         require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
 
         address minter = msg.sender;
