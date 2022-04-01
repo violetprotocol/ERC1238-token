@@ -68,7 +68,9 @@ contract ERC1238URIStorageMock is ERC1238, ERC1238URIStorage {
         uint256 id,
         uint256 amount
     ) external {
-        _burnAndDeleteURI(from, id, amount);
+        super._burn(from, id, amount);
+
+        _deleteTokenURI(id);
     }
 
     function burnBatchAndDeleteURIs(
@@ -76,6 +78,26 @@ contract ERC1238URIStorageMock is ERC1238, ERC1238URIStorage {
         uint256[] memory ids,
         uint256[] memory amounts
     ) external {
-        _burnBatchAndDeleteURIs(from, ids, amounts);
+        require(from != address(0), "ERC1238: burn from the zero address");
+        require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
+
+        address burner = msg.sender;
+
+        for (uint256 i = 0; i < ids.length; i++) {
+            uint256 id = ids[i];
+            uint256 amount = amounts[i];
+
+            _beforeBurn(burner, from, id, amount);
+
+            uint256 fromBalance = _balances[id][from];
+            require(fromBalance >= amount, "ERC1238: burn amount exceeds balance");
+            unchecked {
+                _balances[id][from] = fromBalance - amount;
+            }
+
+            _deleteTokenURI(id);
+        }
+
+        emit BurnBatch(burner, from, ids, amounts);
     }
 }

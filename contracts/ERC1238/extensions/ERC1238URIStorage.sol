@@ -38,6 +38,10 @@ abstract contract ERC1238URIStorage is IERC1238URIStorage, ERC1238 {
         emit URI(id, _tokenURI);
     }
 
+    /**
+     * @dev [Batched] version of {_setTokenURI}.
+     *
+     */
     function _setBatchTokenURI(uint256[] memory ids, string[] memory tokenURIs) internal {
         require(ids.length == tokenURIs.length, "ERC1238Storage: ids and token URIs length mismatch");
 
@@ -67,60 +71,5 @@ abstract contract ERC1238URIStorage is IERC1238URIStorage, ERC1238 {
      */
     function _isTokenURISet(uint256 id) private view returns (bool) {
         return bytes(_tokenURIs[id]).length > 0;
-    }
-
-    /**
-     * @dev Destroys `amount` of tokens with id `id` owned by `from` and deletes the associated URI.
-     *
-     * Requirements:
-     *  - A token URI must be set.
-     *  - All tokens of this type must have been burned.
-     */
-    function _burnAndDeleteURI(
-        address from,
-        uint256 id,
-        uint256 amount
-    ) internal virtual {
-        super._burn(from, id, amount);
-
-        _deleteTokenURI(id);
-    }
-
-    /**
-     * @dev [Batched] version of {_burnAndDeleteURI}.
-     *
-     * Requirements:
-     *
-     * - `ids` and `amounts` must have the same length.
-     * - For each id the balance of `from` must be at least the amount wished to be burnt.
-     *
-     * Emits a {BurnBatch} event.
-     */
-    function _burnBatchAndDeleteURIs(
-        address from,
-        uint256[] memory ids,
-        uint256[] memory amounts
-    ) internal virtual {
-        require(from != address(0), "ERC1238: burn from the zero address");
-        require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
-
-        address burner = msg.sender;
-
-        for (uint256 i = 0; i < ids.length; i++) {
-            uint256 id = ids[i];
-            uint256 amount = amounts[i];
-
-            _beforeBurn(burner, from, id, amount);
-
-            uint256 fromBalance = _balances[id][from];
-            require(fromBalance >= amount, "ERC1238: burn amount exceeds balance");
-            unchecked {
-                _balances[id][from] = fromBalance - amount;
-            }
-
-            _deleteTokenURI(id);
-        }
-
-        emit BurnBatch(burner, from, ids, amounts);
     }
 }
