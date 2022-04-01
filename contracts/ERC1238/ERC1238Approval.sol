@@ -76,7 +76,7 @@ contract ERC1238Approval {
      * must be passed to _verifyMintingApproval as `mintApprovalHash`.
      *
      */
-    function getMintApprovalMessageHash(
+    function _getMintApprovalMessageHash(
         address recipient,
         uint256 id,
         uint256 amount
@@ -92,7 +92,7 @@ contract ERC1238Approval {
      * must be passed to _verifyMintingApproval as `mintApprovalHash`.
      *
      */
-    function getMintBatchApprovalMessageHash(
+    function _getMintBatchApprovalMessageHash(
         address recipient,
         uint256[] memory ids,
         uint256[] memory amounts

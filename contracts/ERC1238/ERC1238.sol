@@ -132,7 +132,7 @@ contract ERC1238 is IERC1238, ERC1238Approval {
         bytes32 s,
         bytes memory data
     ) internal virtual {
-        bytes32 messageHash = getMintApprovalMessageHash(to, id, amount);
+        bytes32 messageHash = _getMintApprovalMessageHash(to, id, amount);
         _verifyMintingApproval(to, messageHash, v, r, s);
 
         _mint(to, id, amount, data);
@@ -189,7 +189,7 @@ contract ERC1238 is IERC1238, ERC1238Approval {
         bytes32 s,
         bytes memory data
     ) internal virtual {
-        bytes32 messageHash = getMintBatchApprovalMessageHash(to, ids, amounts);
+        bytes32 messageHash = _getMintBatchApprovalMessageHash(to, ids, amounts);
         _verifyMintingApproval(to, messageHash, v, r, s);
 
         _mintBatch(to, ids, amounts, data);
