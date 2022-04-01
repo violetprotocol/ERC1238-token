@@ -36,13 +36,14 @@ interface IERC1238 {
     function balanceOf(address account, uint256 id) external view returns (uint256);
 
     /**
-     * @dev [Batched] version of {balanceOf}.
+     * @dev Returns the balance of `account` for a batch of token `ids`
      *
      */
     function balanceOfBatch(address account, uint256[] calldata ids) external view returns (uint256[] memory);
 
     /**
-     * @dev [Batched] version of {balanceOf}.
+     * @dev Returns the balance of multiple `accounts` for a batch of token `ids`.
+     * This is equivalent to calling {balanceOfBatch} for several accounts in just one call.
      *
      * Reuirements:
      * - `accounts` and `ids` must have the same length.
