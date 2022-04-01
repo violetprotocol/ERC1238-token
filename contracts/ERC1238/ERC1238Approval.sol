@@ -8,18 +8,34 @@ struct EIP712Domain {
     address verifyingContract;
 }
 
+// Typed data of a Mint Batch transaction
+// needing to be approved by `recipient`.
 struct MintBatchApproval {
     address recipient;
     uint256[] ids;
     uint256[] amounts;
 }
 
+// Typed data of a Mint transaction
+// needing to be approved by `recipient`.
 struct MintApproval {
     address recipient;
     uint256 id;
     uint256 amount;
 }
 
+/**
+ * ERC1238 tokens can only be minted to an EOA by providing a message signed by the recipient to
+ * approve the minting, or batch minting, of tokens.
+ *
+ * This contract contains the logic around generating and verifiying these signed messages.
+ *
+ * @dev The implementation is based on EIP-712, a standard for typed structured data hashing and signing.
+ * The standard defines the `hashtruct` function where structs are encoded with their typeHash
+ * (a constant defining their type) and hashed.
+ * See https://eips.ethereum.org/EIPS/eip-712
+ *
+ */
 contract ERC1238Approval {
     bytes32 private constant EIP712DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
@@ -30,9 +46,12 @@ contract ERC1238Approval {
     bytes32 private constant MINT_BATCH_APPROVAL_TYPEHASH =
         keccak256("MintBatchApproval(address recipient,uint256[] ids,uint256[] amounts)");
 
+    // Domain Separator, as defined by EIP-712 (`hashstruct(eip712Domain)`)
     bytes32 public DOMAIN_SEPARATOR;
 
     constructor() {
+        // The EIP712Domain shares the same name for all ERC128Approval contracts
+        // but the unique address of this contract as `verifiyingContract`
         EIP712Domain memory eip712Domain = EIP712Domain({
             name: "ERC1238 Mint Approval",
             version: "1",
@@ -51,6 +70,12 @@ contract ERC1238Approval {
         );
     }
 
+    /**
+     * @dev Returns a MintApprovalMessageHash which is the result of `hashstruct(MintApproval)`.
+     * To verify that `recipient` approved a mint transaction, the hash returned
+     * must be passed to _verifyMintingApproval as `mintApprovalHash`.
+     *
+     */
     function getMintApprovalMessageHash(
         address recipient,
         uint256 id,
@@ -61,6 +86,12 @@ contract ERC1238Approval {
             keccak256(abi.encode(MINT_APPROVAL_TYPEHASH, mintApproval.recipient, mintApproval.id, mintApproval.amount));
     }
 
+    /**
+     * @dev Returns a MintBatchApprovalMessageHash which is the result of `hashstruct(MintBatchApproval)`.
+     * To verify that `recipient` approved a mint batch transaction, the hash returned
+     * must be passed to _verifyMintingApproval as `mintApprovalHash`.
+     *
+     */
     function getMintBatchApprovalMessageHash(
         address recipient,
         uint256[] memory ids,
@@ -83,6 +114,11 @@ contract ERC1238Approval {
             );
     }
 
+    /**
+     * @dev Given a mintApprovalHash (either MintApprovalMessageHash or MintBatchApprovalMessageHash),
+     * this function verifies if the signature (v, r, and s) was signed by `recipient` based on the
+     * EIP712Domain of this contract, and otherwise reverts.
+     */
     function _verifyMintingApproval(
         address recipient,
         bytes32 mintApprovalHash,
