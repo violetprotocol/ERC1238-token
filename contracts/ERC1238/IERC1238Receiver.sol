@@ -14,14 +14,14 @@ interface IERC1238Receiver {
      *
      * @param minter The address which initiated minting (i.e. msg.sender)
      * @param id The ID of the token being transferred
-     * @param value The amount of tokens being transferred
+     * @param amount The amount of tokens being transferred
      * @param data Additional data with no specified format
      * @return `bytes4(keccak256("onERC1238Mint(address,uint256,uint256,bytes)"))` if minting is allowed
      */
     function onERC1238Mint(
         address minter,
         uint256 id,
-        uint256 value,
+        uint256 amount,
         bytes calldata data
     ) external returns (bytes4);
 
@@ -33,14 +33,14 @@ interface IERC1238Receiver {
      *
      * @param minter The address which initiated minting (i.e. msg.sender)
      * @param ids An array containing ids of each token being transferred (order and length must match values array)
-     * @param values An array containing amounts of each token being transferred (order and length must match ids array)
+     * @param amounts An array containing amounts of each token being transferred (order and length must match ids array)
      * @param data Additional data with no specified format
      * @return `bytes4(keccak256("onERC1238BatchMint(address,uint256[],uint256[],bytes)"))` if minting is allowed
      */
     function onERC1238BatchMint(
         address minter,
         uint256[] calldata ids,
-        uint256[] calldata values,
+        uint256[] calldata amounts,
         bytes calldata data
     ) external returns (bytes4);
 }
