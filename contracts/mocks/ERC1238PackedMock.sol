@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../ERC1238/extensions/ERC1238Packed.sol";
+import "../ERC1238/extensions/ERC1238Collection.sol";
 
-contract ERC1238PackedMock is ERC1238, ERC1238Packed {
+contract ERC1238CollectionMock is ERC1238, ERC1238Collection {
     constructor(string memory baseURI_) ERC1238(baseURI_) {}
 
     function _beforeMint(
@@ -12,7 +12,7 @@ contract ERC1238PackedMock is ERC1238, ERC1238Packed {
         uint256 id,
         uint256 amount,
         bytes memory data
-    ) internal override(ERC1238, ERC1238Packed) {
+    ) internal override(ERC1238, ERC1238Collection) {
         return super._beforeMint(minter, to, id, amount, data);
     }
 
@@ -21,7 +21,7 @@ contract ERC1238PackedMock is ERC1238, ERC1238Packed {
         address from,
         uint256 id,
         uint256 amount
-    ) internal override(ERC1238, ERC1238Packed) {
+    ) internal override(ERC1238, ERC1238Collection) {
         return super._beforeBurn(burner, from, id, amount);
     }
 

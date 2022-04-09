@@ -3,15 +3,15 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import { artifacts, ethers, waffle } from "hardhat";
 import type { Artifact } from "hardhat/types";
-import type { ERC1238PackedMock } from "../../../src/types/ERC1238PackedMock";
+import type { ERC1238CollectionMock } from "../../../src/types/ERC1238CollectionMock";
 import { ERC1238ReceiverMock } from "../../../src/types/ERC1238ReceiverMock";
 import { toBN, ZERO_ADDRESS } from "../../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
 
 // TODO: Add equivalent tests for EOAs
-describe("ERC1238Packed", function () {
-  let erc1238Packed: ERC1238PackedMock;
+describe("ERC1238Collection", function () {
+  let erc1238Collection: ERC1238CollectionMock;
   let smartContractRecipient1: ERC1238ReceiverMock;
   let admin: SignerWithAddress;
   // let tokenRecipient: SignerWithAddress;
@@ -23,8 +23,10 @@ describe("ERC1238Packed", function () {
   });
 
   beforeEach(async function () {
-    const erc1238PackedArtifact: Artifact = await artifacts.readArtifact("ERC1238PackedMock");
-    erc1238Packed = <ERC1238PackedMock>await waffle.deployContract(admin, erc1238PackedArtifact, [BASE_URI]);
+    const erc1238CollectionArtifact: Artifact = await artifacts.readArtifact("ERC1238CollectionMock");
+    erc1238Collection = <ERC1238CollectionMock>(
+      await waffle.deployContract(admin, erc1238CollectionArtifact, [BASE_URI])
+    );
     const ERC1238ReceiverMockArtifact: Artifact = await artifacts.readArtifact("ERC1238ReceiverMock");
     smartContractRecipient1 = <ERC1238ReceiverMock>await waffle.deployContract(admin, ERC1238ReceiverMockArtifact);
   });
@@ -56,32 +58,38 @@ describe("ERC1238Packed", function () {
       describe("Base Id for NFTs", () => {
         const NFT_AMOUNT = 1;
         it("should credit the right balance of tokens from a base id", async () => {
-          const tokenId = await erc1238Packed.getConstructedTokenID(baseId, smartContractRecipient1.address, counter_0);
-
-          await erc1238Packed.mintToContract(smartContractRecipient1.address, tokenId, NFT_AMOUNT, []);
-
-          expect(await erc1238Packed.balanceFromBaseId(smartContractRecipient1.address, baseId)).to.eq(NFT_AMOUNT);
-          expect(await erc1238Packed.balanceOf(smartContractRecipient1.address, tokenId)).to.eq(NFT_AMOUNT);
-        });
-
-        it("should aggregate balances of different NFTs with the same base id", async () => {
-          const tokenId_0 = await erc1238Packed.getConstructedTokenID(
+          const tokenId = await erc1238Collection.getConstructedTokenID(
             baseId,
             smartContractRecipient1.address,
             counter_0,
           );
-          const tokenId_1 = await erc1238Packed.getConstructedTokenID(
+
+          await erc1238Collection.mintToContract(smartContractRecipient1.address, tokenId, NFT_AMOUNT, []);
+
+          expect(await erc1238Collection.balanceFromBaseId(smartContractRecipient1.address, baseId)).to.eq(NFT_AMOUNT);
+          expect(await erc1238Collection.balanceOf(smartContractRecipient1.address, tokenId)).to.eq(NFT_AMOUNT);
+        });
+
+        it("should aggregate balances of different NFTs with the same base id", async () => {
+          const tokenId_0 = await erc1238Collection.getConstructedTokenID(
+            baseId,
+            smartContractRecipient1.address,
+            counter_0,
+          );
+          const tokenId_1 = await erc1238Collection.getConstructedTokenID(
             baseId,
             smartContractRecipient1.address,
             counter_1,
           );
 
-          await erc1238Packed.mintToContract(smartContractRecipient1.address, tokenId_0, NFT_AMOUNT, []);
-          await erc1238Packed.mintToContract(smartContractRecipient1.address, tokenId_1, NFT_AMOUNT, []);
+          await erc1238Collection.mintToContract(smartContractRecipient1.address, tokenId_0, NFT_AMOUNT, []);
+          await erc1238Collection.mintToContract(smartContractRecipient1.address, tokenId_1, NFT_AMOUNT, []);
 
-          expect(await erc1238Packed.balanceFromBaseId(smartContractRecipient1.address, baseId)).to.eq(NFT_AMOUNT * 2);
-          expect(await erc1238Packed.balanceOf(smartContractRecipient1.address, tokenId_0)).to.eq(NFT_AMOUNT);
-          expect(await erc1238Packed.balanceOf(smartContractRecipient1.address, tokenId_1)).to.eq(NFT_AMOUNT);
+          expect(await erc1238Collection.balanceFromBaseId(smartContractRecipient1.address, baseId)).to.eq(
+            NFT_AMOUNT * 2,
+          );
+          expect(await erc1238Collection.balanceOf(smartContractRecipient1.address, tokenId_0)).to.eq(NFT_AMOUNT);
+          expect(await erc1238Collection.balanceOf(smartContractRecipient1.address, tokenId_1)).to.eq(NFT_AMOUNT);
         });
       });
 
@@ -89,12 +97,16 @@ describe("ERC1238Packed", function () {
         const FT_AMOUNT = 92837465;
         const FT_AMOUNT_1 = 123456;
         it("should credit the right balance of tokens from a base id", async () => {
-          const tokenId = await erc1238Packed.getConstructedTokenID(baseId, smartContractRecipient1.address, counter_0);
+          const tokenId = await erc1238Collection.getConstructedTokenID(
+            baseId,
+            smartContractRecipient1.address,
+            counter_0,
+          );
 
-          await erc1238Packed.mintToContract(smartContractRecipient1.address, tokenId, FT_AMOUNT, []);
+          await erc1238Collection.mintToContract(smartContractRecipient1.address, tokenId, FT_AMOUNT, []);
 
-          expect(await erc1238Packed.balanceFromBaseId(smartContractRecipient1.address, baseId)).to.eq(FT_AMOUNT);
-          expect(await erc1238Packed.balanceOf(smartContractRecipient1.address, tokenId)).to.eq(FT_AMOUNT);
+          expect(await erc1238Collection.balanceFromBaseId(smartContractRecipient1.address, baseId)).to.eq(FT_AMOUNT);
+          expect(await erc1238Collection.balanceOf(smartContractRecipient1.address, tokenId)).to.eq(FT_AMOUNT);
         });
 
         it("should aggregate balances of different FTs with the same base id", async () => {
@@ -102,67 +114,67 @@ describe("ERC1238Packed", function () {
           const counter_0 = 0;
           const counter_1 = 1;
 
-          const tokenId_0 = await erc1238Packed.getConstructedTokenID(
+          const tokenId_0 = await erc1238Collection.getConstructedTokenID(
             baseId,
             smartContractRecipient1.address,
             counter_0,
           );
-          const tokenId_1 = await erc1238Packed.getConstructedTokenID(
+          const tokenId_1 = await erc1238Collection.getConstructedTokenID(
             baseId,
             smartContractRecipient1.address,
             counter_1,
           );
 
-          await erc1238Packed.mintToContract(smartContractRecipient1.address, tokenId_0, FT_AMOUNT, []);
-          await erc1238Packed.mintToContract(smartContractRecipient1.address, tokenId_1, FT_AMOUNT_1, []);
+          await erc1238Collection.mintToContract(smartContractRecipient1.address, tokenId_0, FT_AMOUNT, []);
+          await erc1238Collection.mintToContract(smartContractRecipient1.address, tokenId_1, FT_AMOUNT_1, []);
 
-          expect(await erc1238Packed.balanceFromBaseId(smartContractRecipient1.address, baseId)).to.eq(
+          expect(await erc1238Collection.balanceFromBaseId(smartContractRecipient1.address, baseId)).to.eq(
             FT_AMOUNT + FT_AMOUNT_1,
           );
-          expect(await erc1238Packed.balanceOf(smartContractRecipient1.address, tokenId_0)).to.eq(FT_AMOUNT);
-          expect(await erc1238Packed.balanceOf(smartContractRecipient1.address, tokenId_1)).to.eq(FT_AMOUNT_1);
+          expect(await erc1238Collection.balanceOf(smartContractRecipient1.address, tokenId_0)).to.eq(FT_AMOUNT);
+          expect(await erc1238Collection.balanceOf(smartContractRecipient1.address, tokenId_1)).to.eq(FT_AMOUNT_1);
         });
       });
 
       it("should revert with the zero address as recipient", async () => {
         await expect(
-          erc1238Packed.connect(admin).mintToContract(ZERO_ADDRESS, tokenId, mintAmount, data),
+          erc1238Collection.connect(admin).mintToContract(ZERO_ADDRESS, tokenId, mintAmount, data),
         ).to.be.revertedWith("ERC1238: Recipient is not a contract");
       });
 
       it("should credit the amount of tokens", async () => {
-        await erc1238Packed.mintToContract(smartContractRecipient1.address, tokenId, mintAmount, data);
+        await erc1238Collection.mintToContract(smartContractRecipient1.address, tokenId, mintAmount, data);
 
-        const balance = await erc1238Packed.balanceOf(smartContractRecipient1.address, tokenId);
+        const balance = await erc1238Collection.balanceOf(smartContractRecipient1.address, tokenId);
 
         expect(balance).to.eq(mintAmount);
       });
 
       it("should emit a MintSingle event", async () => {
-        await expect(erc1238Packed.mintToContract(smartContractRecipient1.address, tokenId, mintAmount, data))
-          .to.emit(erc1238Packed, "MintSingle")
+        await expect(erc1238Collection.mintToContract(smartContractRecipient1.address, tokenId, mintAmount, data))
+          .to.emit(erc1238Collection, "MintSingle")
           .withArgs(admin.address, smartContractRecipient1.address, tokenId, mintAmount);
       });
     });
 
     describe("_mintBatch", () => {
       before(async () => {
-        const tokenId_0 = await erc1238Packed.getConstructedTokenID(
+        const tokenId_0 = await erc1238Collection.getConstructedTokenID(
           baseId_1,
           smartContractRecipient1.address,
           counter_0,
         );
-        const tokenId_1 = await erc1238Packed.getConstructedTokenID(
+        const tokenId_1 = await erc1238Collection.getConstructedTokenID(
           baseId_1,
           smartContractRecipient1.address,
           counter_1,
         );
-        const tokenId_2 = await erc1238Packed.getConstructedTokenID(
+        const tokenId_2 = await erc1238Collection.getConstructedTokenID(
           baseId_2,
           smartContractRecipient1.address,
           counter_0,
         );
-        const tokenId_3 = await erc1238Packed.getConstructedTokenID(
+        const tokenId_3 = await erc1238Collection.getConstructedTokenID(
           baseId_2,
           smartContractRecipient1.address,
           counter_1,
@@ -172,12 +184,12 @@ describe("ERC1238Packed", function () {
       });
       describe("Base ID", () => {
         it("should credit the right base ids", async () => {
-          await erc1238Packed
+          await erc1238Collection
             .connect(admin)
             .mintBatchToContract(smartContractRecipient1.address, tokenBatchIds, mintBatchAmounts, data);
 
-          const balanceOfBaseId1 = await erc1238Packed.balanceFromBaseId(smartContractRecipient1.address, baseId_1);
-          const balanceOfBaseId2 = await erc1238Packed.balanceFromBaseId(smartContractRecipient1.address, baseId_2);
+          const balanceOfBaseId1 = await erc1238Collection.balanceFromBaseId(smartContractRecipient1.address, baseId_1);
+          const balanceOfBaseId2 = await erc1238Collection.balanceFromBaseId(smartContractRecipient1.address, baseId_2);
 
           expect(balanceOfBaseId1).to.eq(mintBatchAmounts[0].add(mintBatchAmounts[1]));
           expect(balanceOfBaseId2).to.eq(mintBatchAmounts[2].add(mintBatchAmounts[3]));
@@ -186,31 +198,31 @@ describe("ERC1238Packed", function () {
 
       it("should revert with the zero address", async () => {
         await expect(
-          erc1238Packed.connect(admin).mintBatchToContract(ZERO_ADDRESS, tokenBatchIds, mintBatchAmounts, data),
+          erc1238Collection.connect(admin).mintBatchToContract(ZERO_ADDRESS, tokenBatchIds, mintBatchAmounts, data),
         ).to.be.revertedWith("ERC1238: Recipient is not a contract");
       });
 
       it("should revert if the length of inputs do not match", async () => {
         await expect(
-          erc1238Packed
+          erc1238Collection
             .connect(admin)
             .mintBatchToContract(smartContractRecipient1.address, tokenBatchIds.slice(1), mintBatchAmounts, data),
         ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
 
         await expect(
-          erc1238Packed
+          erc1238Collection
             .connect(admin)
             .mintBatchToContract(smartContractRecipient1.address, tokenBatchIds, mintBatchAmounts.slice(1), data),
         ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
       });
 
       it("should credit the minted tokens", async () => {
-        await erc1238Packed
+        await erc1238Collection
           .connect(admin)
           .mintBatchToContract(smartContractRecipient1.address, tokenBatchIds, mintBatchAmounts, data);
 
         tokenBatchIds.forEach(async (tokenId, index) =>
-          expect(await erc1238Packed.balanceOf(smartContractRecipient1.address, tokenId)).to.eq(
+          expect(await erc1238Collection.balanceOf(smartContractRecipient1.address, tokenId)).to.eq(
             mintBatchAmounts[index],
           ),
         );
@@ -218,9 +230,9 @@ describe("ERC1238Packed", function () {
 
       it("should emit a MintBatch event", async () => {
         await expect(
-          erc1238Packed.mintBatchToContract(smartContractRecipient1.address, tokenBatchIds, mintBatchAmounts, data),
+          erc1238Collection.mintBatchToContract(smartContractRecipient1.address, tokenBatchIds, mintBatchAmounts, data),
         )
-          .to.emit(erc1238Packed, "MintBatch")
+          .to.emit(erc1238Collection, "MintBatch")
           .withArgs(admin.address, smartContractRecipient1.address, tokenBatchIds, mintBatchAmounts);
       });
     });
@@ -237,77 +249,81 @@ describe("ERC1238Packed", function () {
             const mintAmount = toBN("50");
             const burnAmount = toBN("25");
 
-            const tokenId = await erc1238Packed.getConstructedTokenID(baseId, smartContractRecipient1.address, counter);
+            const tokenId = await erc1238Collection.getConstructedTokenID(
+              baseId,
+              smartContractRecipient1.address,
+              counter,
+            );
 
-            await erc1238Packed.mintToContract(smartContractRecipient1.address, tokenId, mintAmount, []);
+            await erc1238Collection.mintToContract(smartContractRecipient1.address, tokenId, mintAmount, []);
 
-            await erc1238Packed.burn(smartContractRecipient1.address, tokenId, burnAmount);
+            await erc1238Collection.burn(smartContractRecipient1.address, tokenId, burnAmount);
 
-            expect(await erc1238Packed.balanceFromBaseId(smartContractRecipient1.address, baseId)).to.eq(
+            expect(await erc1238Collection.balanceFromBaseId(smartContractRecipient1.address, baseId)).to.eq(
               mintAmount.sub(burnAmount),
             );
           });
         });
 
         it("should revert when burning the zero account's token", async () => {
-          await expect(erc1238Packed.connect(admin).burn(ZERO_ADDRESS, tokenId, burnAmount)).to.be.revertedWith(
+          await expect(erc1238Collection.connect(admin).burn(ZERO_ADDRESS, tokenId, burnAmount)).to.be.revertedWith(
             "ERC1238: burn from the zero address",
           );
         });
 
         it("should revert when burning a non-existent token id", async () => {
           await expect(
-            erc1238Packed.connect(admin).burn(smartContractRecipient1.address, tokenId, burnAmount),
+            erc1238Collection.connect(admin).burn(smartContractRecipient1.address, tokenId, burnAmount),
           ).to.be.revertedWith("ERC1238: burn amount exceeds base id balance");
         });
 
         it("should revert when burning more than available balance", async () => {
           const amountToMint = burnAmount.sub(1);
-          await erc1238Packed.mintToContract(smartContractRecipient1.address, tokenId, amountToMint, data);
+          await erc1238Collection.mintToContract(smartContractRecipient1.address, tokenId, amountToMint, data);
 
           await expect(
-            erc1238Packed.connect(admin).burn(smartContractRecipient1.address, tokenId, burnAmount),
+            erc1238Collection.connect(admin).burn(smartContractRecipient1.address, tokenId, burnAmount),
           ).to.be.revertedWith("ERC1238: burn amount exceeds base id balance");
         });
 
         it("should burn the right amount of tokens", async () => {
           const amountToMint = burnAmount.add(1);
 
-          await erc1238Packed.mintToContract(smartContractRecipient1.address, tokenId, amountToMint, data);
+          await erc1238Collection.mintToContract(smartContractRecipient1.address, tokenId, amountToMint, data);
 
-          await erc1238Packed.connect(admin).burn(smartContractRecipient1.address, tokenId, burnAmount);
+          await erc1238Collection.connect(admin).burn(smartContractRecipient1.address, tokenId, burnAmount);
 
-          expect(await erc1238Packed.balanceOf(smartContractRecipient1.address, tokenId)).to.eq(1);
+          expect(await erc1238Collection.balanceOf(smartContractRecipient1.address, tokenId)).to.eq(1);
         });
 
         it("should emit a BurnSingle event", async () => {
-          await erc1238Packed.mintToContract(smartContractRecipient1.address, tokenId, burnAmount, data);
+          await erc1238Collection.mintToContract(smartContractRecipient1.address, tokenId, burnAmount, data);
 
-          await expect(erc1238Packed.burn(smartContractRecipient1.address, tokenId, burnAmount))
-            .to.emit(erc1238Packed, "BurnSingle")
+          await expect(erc1238Collection.burn(smartContractRecipient1.address, tokenId, burnAmount))
+            .to.emit(erc1238Collection, "BurnSingle")
             .withArgs(admin.address, smartContractRecipient1.address, tokenId, burnAmount);
         });
       });
 
       describe("_burnBatch", () => {
         before(async () => {
-          const tokenId_0 = await erc1238Packed.getConstructedTokenID(
+          const tokenId_0 = await erc1238Collection.getConstructedTokenID(
             baseId_1,
             smartContractRecipient1.address,
             counter_0,
           );
-          const tokenId_1 = await erc1238Packed.getConstructedTokenID(
+          const tokenId_1 = await erc1238Collection.getConstructedTokenID(
             baseId_1,
             smartContractRecipient1.address,
             counter_1,
           );
 
-          const tokenId_2 = await erc1238Packed.getConstructedTokenID(
+          const tokenId_2 = await erc1238Collection.getConstructedTokenID(
             baseId_2,
             smartContractRecipient1.address,
             counter_0,
           );
-          const tokenId_3 = await erc1238Packed.getConstructedTokenID(
+          const tokenId_3 = await erc1238Collection.getConstructedTokenID(
             baseId_2,
             smartContractRecipient1.address,
             counter_1,
@@ -318,16 +334,16 @@ describe("ERC1238Packed", function () {
 
         describe("baseId", () => {
           it("should properly decrease the baseId balances", async () => {
-            await erc1238Packed
+            await erc1238Collection
               .connect(admin)
               .mintBatchToContract(smartContractRecipient1.address, tokenBatchIds, mintBatchAmounts, data);
 
-            await erc1238Packed
+            await erc1238Collection
               .connect(admin)
               .burnBatch(smartContractRecipient1.address, tokenBatchIds, burnBatchAmounts);
 
-            const baseId1Balance = await erc1238Packed.balanceFromBaseId(smartContractRecipient1.address, baseId_1);
-            const baseId2Balance = await erc1238Packed.balanceFromBaseId(smartContractRecipient1.address, baseId_2);
+            const baseId1Balance = await erc1238Collection.balanceFromBaseId(smartContractRecipient1.address, baseId_1);
+            const baseId2Balance = await erc1238Collection.balanceFromBaseId(smartContractRecipient1.address, baseId_2);
 
             const remainingAmounts = tokenBatchIds.map((_, index) =>
               mintBatchAmounts[index].sub(burnBatchAmounts[index]),
@@ -339,26 +355,26 @@ describe("ERC1238Packed", function () {
         });
         it("should revert when burning the zero account's token", async () => {
           await expect(
-            erc1238Packed.connect(admin).burnBatch(ZERO_ADDRESS, tokenBatchIds, burnBatchAmounts),
+            erc1238Collection.connect(admin).burnBatch(ZERO_ADDRESS, tokenBatchIds, burnBatchAmounts),
           ).to.be.revertedWith("ERC1238: burn from the zero address");
         });
 
         it("should revert if the length of inputs do not match", async () => {
           await expect(
-            erc1238Packed
+            erc1238Collection
               .connect(admin)
               .burnBatch(smartContractRecipient1.address, tokenBatchIds.slice(1), burnBatchAmounts),
           ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
 
           await expect(
-            erc1238Packed
+            erc1238Collection
               .connect(admin)
               .burnBatch(smartContractRecipient1.address, tokenBatchIds, burnBatchAmounts.slice(1)),
           ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
         });
 
         it("should revert when burning a non-existent token id", async () => {
-          await erc1238Packed
+          await erc1238Collection
             .connect(admin)
             .mintBatchToContract(
               smartContractRecipient1.address,
@@ -368,36 +384,38 @@ describe("ERC1238Packed", function () {
             );
 
           await expect(
-            erc1238Packed.connect(admin).burnBatch(smartContractRecipient1.address, tokenBatchIds, burnBatchAmounts),
+            erc1238Collection
+              .connect(admin)
+              .burnBatch(smartContractRecipient1.address, tokenBatchIds, burnBatchAmounts),
           ).to.be.revertedWith("ERC1238: burn amount exceeds balance");
         });
 
         it("should properly burn tokens", async () => {
-          await erc1238Packed
+          await erc1238Collection
             .connect(admin)
             .mintBatchToContract(smartContractRecipient1.address, tokenBatchIds, mintBatchAmounts, data);
 
-          await erc1238Packed
+          await erc1238Collection
             .connect(admin)
             .burnBatch(smartContractRecipient1.address, tokenBatchIds, burnBatchAmounts);
 
           tokenBatchIds.forEach(async (tokenId, i) =>
-            expect(await erc1238Packed.balanceOf(smartContractRecipient1.address, tokenId)).to.eq(
+            expect(await erc1238Collection.balanceOf(smartContractRecipient1.address, tokenId)).to.eq(
               mintBatchAmounts[i].sub(burnBatchAmounts[i]),
             ),
           );
         });
 
         it("should emit a BurnBatch event", async () => {
-          await erc1238Packed.mintBatchToContract(
+          await erc1238Collection.mintBatchToContract(
             smartContractRecipient1.address,
             tokenBatchIds,
             mintBatchAmounts,
             data,
           );
 
-          await expect(erc1238Packed.burnBatch(smartContractRecipient1.address, tokenBatchIds, burnBatchAmounts))
-            .to.emit(erc1238Packed, "BurnBatch")
+          await expect(erc1238Collection.burnBatch(smartContractRecipient1.address, tokenBatchIds, burnBatchAmounts))
+            .to.emit(erc1238Collection, "BurnBatch")
             .withArgs(admin.address, smartContractRecipient1.address, tokenBatchIds, burnBatchAmounts);
         });
       });
