@@ -25,22 +25,22 @@ contract ERC1238PackedMock is ERC1238, ERC1238Packed {
         return super._beforeBurn(burner, from, id, amount);
     }
 
-    function mint(
+    function mintToContract(
         address to,
         uint256 id,
         uint256 amount,
         bytes memory data
     ) external {
-        _mint(to, id, amount, data);
+        _mintToContract(to, id, amount, data);
     }
 
-    function mintBatch(
+    function mintBatchToContract(
         address to,
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory data
     ) external {
-        _mintBatch(to, ids, amounts, data);
+        _mintBatchToContract(to, ids, amounts, data);
     }
 
     function burn(

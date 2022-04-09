@@ -6,7 +6,8 @@ import "../ERC1238.sol";
 import "./IERC1238Packed.sol";
 
 /**
- * @dev Extension that enables packing a `baseId` inside a token id
+ * @dev See {IERC1238Packed}.
+ * This contract keeps track of the balances of addresses for each baseId.
  * Values are packed the following way in the id:
  * [baseId (48 bits)][owner (160 bits)][counter (48 bits)]
  */
@@ -48,7 +49,7 @@ abstract contract ERC1238Packed is IERC1238Packed, ERC1238 {
         uint48 baseId,
         address account,
         uint48 counter
-    ) public pure returns (uint256) {
+    ) public pure override returns (uint256) {
         return uint256(counter) | (uint256(uint160(account)) << 48) | (uint256(baseId) << 208);
     }
 }
