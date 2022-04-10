@@ -16,7 +16,7 @@ interface IERC1238Collection is IERC1238 {
     function balanceFromBaseId(address account, uint48 baseId) external view returns (uint256);
 
     /**
-     * @dev Returns a token id based on its sub-components.x
+     * @dev Returns a token id based on its sub-components.
      */
     function getConstructedTokenID(
         uint48 baseId,
