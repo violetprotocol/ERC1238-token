@@ -74,10 +74,12 @@ describe("ERC1238Expirable", function () {
         const blockNumBefore = await ethers.provider.getBlockNumber();
         const blockBefore = await ethers.provider.getBlock(blockNumBefore);
         const blockTimestamp = blockBefore.timestamp;
+        // Setting the expiry 100 secs from now
         const expiry = blockTimestamp + 100;
 
         await erc1238ExpirableMock.setExpiryDate(tokenId, expiry);
 
+        // Increasing time by 200 seconds, so the token should be expired
         await increaseEVMTime(200);
 
         expect(await erc1238ExpirableMock.isExpired(tokenId)).to.be.true;
