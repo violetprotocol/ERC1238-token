@@ -387,7 +387,7 @@ contract ERC1238 is IERC1238, ERC1238Approval {
      * @dev Hook that is called before an `amount` of tokens are burned.
      *
      * Calling conditions:
-     * - `minter` and `to` cannot be the zero address
+     * - `burner` and `from` cannot be the zero address
      *
      */
     function _beforeBurn(
