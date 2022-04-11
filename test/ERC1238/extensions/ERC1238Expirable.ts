@@ -64,7 +64,7 @@ describe("ERC1238Expirable", function () {
     });
 
     describe("isExpired", () => {
-      it("should return for a token that is not expired", async () => {
+      it("should return false for a token that is not expired", async () => {
         await erc1238ExpirableMock.setExpiryDate(tokenId, tokenExpiryDate);
 
         expect(await erc1238ExpirableMock.isExpired(tokenId)).to.be.false;
