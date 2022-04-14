@@ -4,44 +4,56 @@ pragma solidity ^0.8.0;
 
 import "../ERC1238.sol";
 import "./IERC1238Holdable.sol";
+import "./IERC1238Holder.sol";
 
 /**
  * @dev Proposal for ERC1238 tokens extension that allow addresses
- * to hold tokens on behalf of others (escrow)
+ * to hold tokens on behalf of others.
  */
 abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
     // Mapping holder => id => balance
-    mapping(address => mapping(uint256 => uint256)) private _escrowedBalances;
+    mapping(address => mapping(uint256 => uint256)) private _heldBalances;
 
-    function escrowedBalance(address holder, uint256 id) public view override returns (uint256) {
-        return _escrowedBalances[holder][id];
+    event BurnAcknowledgmentFailed(address holder, address burner, address from, uint256 indexed id, uint256 amount);
+
+    function heldBalance(address holder, uint256 id) public view override returns (uint256) {
+        return _heldBalances[holder][id];
     }
 
     function _beforeMint(
-        address minter,
+        address,
         address to,
         uint256 id,
         uint256 amount,
-        bytes memory data
+        bytes memory
     ) internal virtual override {
         // set the token recipient as first holder by default when tokens are minted
-        _escrowedBalances[to][id] += amount;
+        _heldBalances[to][id] += amount;
     }
 
     function _beforeBurn(
+        address holder,
         address burner,
         address from,
         uint256 id,
         uint256 amount
-    ) internal virtual override {
-        require(_escrowedBalances[burner][id] >= amount, "ERC1238Holdable: Amount to burn exceeds amount held");
+    ) internal virtual {
+        require(_heldBalances[holder][id] >= amount, "ERC1238Holdable: Amount to burn exceeds amount held");
 
-        _escrowedBalances[burner][id] -= amount;
+        super._beforeBurn(burner, from, id, amount);
+
+        try IERC1238Holder(holder).onBurnAcknowledged(id, amount) returns (bool isBurnAcknowledged) {
+            if (!isBurnAcknowledged) emit BurnAcknowledgmentFailed(holder, burner, from, id, amount);
+        } catch {
+            emit BurnAcknowledgmentFailed(holder, burner, from, id, amount);
+        }
+
+        _heldBalances[burner][id] -= amount;
     }
 
     /**
      * @dev Lets sender entrusts `to` with `amount`
-     * of tokens which gets transferred between their respective escrowedBalances
+     * of tokens which gets transferred between their respective heldBalances
      *
      */
     function _entrust(
@@ -49,15 +61,13 @@ abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
         uint256 id,
         uint256 amount
     ) internal virtual {
-        require(to != address(0), "ERC1238Holdable: transfer to the zero address");
-
         address from = msg.sender;
 
-        uint256 fromBalance = _escrowedBalances[from][id];
+        uint256 fromBalance = _heldBalances[from][id];
         require(fromBalance >= amount, "ERC1238Holdable: amount exceeds balance held");
 
-        _escrowedBalances[from][id] -= amount;
-        _escrowedBalances[to][id] += amount;
+        _heldBalances[from][id] -= amount;
+        _heldBalances[to][id] += amount;
 
         emit Entrust(from, to, id, amount);
     }
