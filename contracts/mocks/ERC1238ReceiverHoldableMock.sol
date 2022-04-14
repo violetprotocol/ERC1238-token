@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import "../ERC1238/IERC1238Receiver.sol";
 import "../ERC1238/extensions/IERC1238Holdable.sol";
 
+import "./ERC1238HoldableMock.sol";
+
 // This is a dummy example of a ERC1238Receiver with arbitrary rules.
 // It will reject non-transferable tokens if the token id is 0 in the case of a single token mint
 // or if the first token id is 0 for a batch mint.
@@ -48,5 +50,14 @@ contract ERC1238ReceiverHoldableMock is IERC1238Receiver {
         uint256 amount
     ) external {
         IERC1238Holdable(targetContract).entrust(to, id, amount);
+    }
+
+    function burnHeldTokens(
+        address targetContract,
+        address holder,
+        uint256 id,
+        uint256 amount
+    ) external {
+        ERC1238HoldableMock(targetContract).burnHeldTokens(holder, address(this), id, amount);
     }
 }

@@ -12,6 +12,7 @@ describe("ERC1238URIHoldable", function () {
   let erc1238Holdable: ERC1238HoldableMock;
   let admin: SignerWithAddress;
   let tokenOwnerContract: ERC1238ReceiverHoldableMock;
+  // let tokenOwnerContract2: ERC1238ReceiverHoldableMock;
   let eoa1: SignerWithAddress;
   let eoa2: SignerWithAddress;
 
@@ -152,57 +153,51 @@ describe("ERC1238URIHoldable", function () {
     });
   });
 
-  // describe("Burning", () => {
-  //   beforeEach(async () => {
-  //     await erc1238Holdable.mintToContract(tokenOwnerContract.address, tokenId, mintAmount, data);
-  //   });
+  describe("Burning", () => {
+    beforeEach(async () => {
+      await erc1238Holdable.mintToContract(tokenOwnerContract.address, tokenId, mintAmount, data);
+    });
 
-  //   it("should let a token owner burn all of their tokens", async () => {
-  //     await erc1238Holdable.connect(tokenOwnerContract).burn(tokenOwnerContract.address, tokenId, mintAmount);
+    it("should let a token owner burn all of their tokens", async () => {
+      await tokenOwnerContract.burnHeldTokens(erc1238Holdable.address, tokenOwnerContract.address, tokenId, mintAmount);
 
-  //     expect(await erc1238Holdable.heldBalance(tokenOwnerContract.address, tokenId)).to.eq(0);
-  //     expect(await erc1238Holdable.balanceOf(tokenOwnerContract.address, tokenId)).to.eq(0);
-  //   });
+      expect(await erc1238Holdable.heldBalance(tokenOwnerContract.address, tokenId)).to.eq(0);
+      expect(await erc1238Holdable.balanceOf(tokenOwnerContract.address, tokenId)).to.eq(0);
+    });
 
-  //   it("should let a token owner burn some of their tokens", async () => {
-  //     const amountToBurn = mintAmount - 1000;
-  //     await erc1238Holdable.connect(tokenOwnerContract).burn(tokenOwnerContract.address, tokenId, amountToBurn);
+    it("should let a token owner burn some of their tokens", async () => {
+      const amountToBurn = mintAmount - 1000;
 
-  //     expect(await erc1238Holdable.heldBalance(tokenOwnerContract.address, tokenId)).to.eq(mintAmount - amountToBurn);
-  //     expect(await erc1238Holdable.balanceOf(tokenOwnerContract.address, tokenId)).to.eq(mintAmount - amountToBurn);
-  //   });
+      await tokenOwnerContract.burnHeldTokens(
+        erc1238Holdable.address,
+        tokenOwnerContract.address,
+        tokenId,
+        amountToBurn,
+      );
 
-  //   it("should give a token holder the right to burn tokens", async () => {
-  //     const amountToBurn = mintAmount - 100;
+      expect(await erc1238Holdable.heldBalance(tokenOwnerContract.address, tokenId)).to.eq(mintAmount - amountToBurn);
+      expect(await erc1238Holdable.balanceOf(tokenOwnerContract.address, tokenId)).to.eq(mintAmount - amountToBurn);
+    });
 
-  //     await erc1238Holdable.connect(tokenOwnerContract).entrust(eoa1.address, tokenId, mintAmount);
+    it("should let tokens held by an EOA be burnt", async () => {
+      const amountToBurn = mintAmount - 100;
 
-  //     await erc1238Holdable.connect(eoa1).burn(tokenOwnerContract.address, tokenId, amountToBurn);
+      await tokenOwnerContract.entrust(erc1238Holdable.address, eoa1.address, tokenId, amountToBurn);
 
-  //     expect(await erc1238Holdable.heldBalance(eoa1.address, tokenId)).to.eq(mintAmount - amountToBurn);
-  //     expect(await erc1238Holdable.balanceOf(tokenOwnerContract.address, tokenId)).to.eq(mintAmount - amountToBurn);
-  //   });
+      await erc1238Holdable.burnHeldTokens(eoa1.address, tokenOwnerContract.address, tokenId, amountToBurn);
 
-  //   it("should not let a token holder burn more tokens than they hodl", async () => {
-  //     const stakedAmount = mintAmount;
+      expect(await erc1238Holdable.heldBalance(eoa1.address, tokenId)).to.eq(0);
+      expect(await erc1238Holdable.balanceOf(tokenOwnerContract.address, tokenId)).to.eq(mintAmount - amountToBurn);
+    });
 
-  //     await erc1238Holdable.connect(tokenOwnerContract).entrust(eoa1.address, tokenId, escrowedAmount);
+    it("should revert when trying to burn more tokens that what the holder passed holds", async () => {
+      const stakedAmount = mintAmount;
 
-  //     await expect(
-  //       erc1238Holdable.connect(tokenOwnerContract).burn(tokenOwnerContract.address, tokenId, escrowedAmount + 1),
-  //     ).to.be.revertedWith("ERC1238Holdable: Amount to burn exceeds amount held");
-  //   });
+      await tokenOwnerContract.entrust(erc1238Holdable.address, eoa1.address, tokenId, stakedAmount);
 
-  //   it("should not let a token owner burn tokens they do not hold", async () => {
-  //     const escrowedAmount = 2000;
-
-  //     await erc1238Holdable.connect(tokenOwnerContract).entrust(eoa1.address, tokenId, escrowedAmount);
-
-  //     const amountHeldByOwner = mintAmount - escrowedAmount;
-
-  //     await expect(
-  //       erc1238Holdable.connect(tokenOwnerContract).burn(tokenOwnerContract.address, tokenId, amountHeldByOwner + 1),
-  //     ).to.be.revertedWith("ERC1238Holdable: Amount to burn exceeds amount held");
-  //   });
-  // });
+      await expect(
+        erc1238Holdable.burnHeldTokens(eoa1.address, tokenOwnerContract.address, tokenId, stakedAmount + 1),
+      ).to.be.revertedWith("ERC1238Holdable: Amount to burn exceeds amount held");
+    });
+  });
 });
