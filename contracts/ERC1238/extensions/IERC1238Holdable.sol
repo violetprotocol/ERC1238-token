@@ -15,6 +15,11 @@ interface IERC1238Holdable is IERC1238 {
     event Entrust(address from, address to, uint256 indexed id, uint256 amount);
 
     /**
+     * @dev Event emitted when tokens are burnt and the holder fails to acknowledge the burn.
+     */
+    event BurnAcknowledgmentFailed(address holder, address burner, address from, uint256 indexed id, uint256 amount);
+
+    /**
      * @dev Returns the balance of a token holder for a given `id`.
      */
     function heldBalance(address holder, uint256 id) external view returns (uint256);

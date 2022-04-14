@@ -11,10 +11,10 @@ import "./IERC1238Holder.sol";
  * to hold tokens on behalf of others.
  */
 abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
+    using Address for address;
+
     // Mapping holder => id => balance
     mapping(address => mapping(uint256 => uint256)) private _heldBalances;
-
-    event BurnAcknowledgmentFailed(address holder, address burner, address from, uint256 indexed id, uint256 amount);
 
     function heldBalance(address holder, uint256 id) public view override returns (uint256) {
         return _heldBalances[holder][id];
@@ -40,10 +40,12 @@ abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
     ) internal virtual {
         require(_heldBalances[holder][id] >= amount, "ERC1238Holdable: Amount to burn exceeds amount held");
 
-        try IERC1238Holder(holder).onBurnAcknowledged(id, amount) returns (bool isBurnAcknowledged) {
-            if (!isBurnAcknowledged) emit BurnAcknowledgmentFailed(holder, burner, from, id, amount);
-        } catch {
-            emit BurnAcknowledgmentFailed(holder, burner, from, id, amount);
+        if (holder.isContract()) {
+            try IERC1238Holder(holder).onBurnAcknowledged(id, amount) returns (bool isBurnAcknowledged) {
+                if (!isBurnAcknowledged) emit BurnAcknowledgmentFailed(holder, burner, from, id, amount);
+            } catch {
+                emit BurnAcknowledgmentFailed(holder, burner, from, id, amount);
+            }
         }
 
         super._burn(from, id, amount);
@@ -71,4 +73,7 @@ abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
 
         emit Entrust(from, to, id, amount);
     }
+
+    // TODO: entrustHolderContract to provide safer alternative which
+    // makes sure the recipient is a IERC1238Holder contract
 }
