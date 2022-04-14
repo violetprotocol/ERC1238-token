@@ -18,4 +18,10 @@ interface IERC1238Holdable is IERC1238 {
      * @dev Returns the balance of a token holder for a given `id`.
      */
     function heldBalance(address holder, uint256 id) external view returns (uint256);
+
+    function entrust(
+        address to,
+        uint256 id,
+        uint256 amount
+    ) external;
 }

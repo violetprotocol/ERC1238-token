@@ -31,16 +31,14 @@ abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
         _heldBalances[to][id] += amount;
     }
 
-    function _beforeBurn(
-        address holder,
+    function _burnHeldTokens(
         address burner,
+        address holder,
         address from,
         uint256 id,
         uint256 amount
     ) internal virtual {
         require(_heldBalances[holder][id] >= amount, "ERC1238Holdable: Amount to burn exceeds amount held");
-
-        super._beforeBurn(burner, from, id, amount);
 
         try IERC1238Holder(holder).onBurnAcknowledged(id, amount) returns (bool isBurnAcknowledged) {
             if (!isBurnAcknowledged) emit BurnAcknowledgmentFailed(holder, burner, from, id, amount);
@@ -48,7 +46,9 @@ abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
             emit BurnAcknowledgmentFailed(holder, burner, from, id, amount);
         }
 
-        _heldBalances[burner][id] -= amount;
+        super._burn(from, id, amount);
+
+        _heldBalances[holder][id] -= amount;
     }
 
     /**
