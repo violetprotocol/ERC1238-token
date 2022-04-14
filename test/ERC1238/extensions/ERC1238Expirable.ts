@@ -3,6 +3,7 @@ import { expect } from "chai";
 import { artifacts, ethers, waffle } from "hardhat";
 import type { Artifact } from "hardhat/types";
 import type { ERC1238ExpirableMock } from "../../../src/types/ERC1238ExpirableMock";
+import { ERC1238ReceiverMock } from "../../../src/types/ERC1238ReceiverMock";
 import { toBN } from "../../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
@@ -16,7 +17,7 @@ const increaseEVMTime = async (time: number) => {
 describe("ERC1238Expirable", function () {
   let erc1238ExpirableMock: ERC1238ExpirableMock;
   let admin: SignerWithAddress;
-  // let tokenRecipient: SignerWithAddress;
+  let contractRecipient: ERC1238ReceiverMock;
   // let tokenBatchRecipient: SignerWithAddress;
 
   before(async function () {
@@ -31,6 +32,9 @@ describe("ERC1238Expirable", function () {
     erc1238ExpirableMock = <ERC1238ExpirableMock>(
       await waffle.deployContract(admin, ERC1238ExpirableMockArtifact, [BASE_URI])
     );
+
+    const ERC1238ReceiverMockArtifact: Artifact = await artifacts.readArtifact("ERC1238ReceiverMock");
+    contractRecipient = <ERC1238ReceiverMock>await waffle.deployContract(admin, ERC1238ReceiverMockArtifact);
   });
 
   describe("internal functions", () => {
@@ -38,16 +42,11 @@ describe("ERC1238Expirable", function () {
     const tokenId = toBN("11223344");
     const tokenExpiryDate = 4110961214;
     const mintAmount = toBN("58319");
-    const burnAmount = toBN("987");
 
     const tokenBatchIds = [toBN("2000"), toBN("2010"), toBN("2020")];
-    const tokenBatchURIs = [
-      "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu",
-      "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiv",
-      "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiw",
-    ];
-    const mintBatchAmounts = [toBN("5000"), toBN("10000"), toBN("42195")];
-    const burnBatchAmounts = [toBN("5000"), toBN("9001"), toBN("195")];
+    const tokenBatchExpiryDates = [4110961215, 4110961216, 4110961217];
+    // const mintBatchAmounts = [toBN("5000"), toBN("10000"), toBN("42195")];
+    // const burnBatchAmounts = [toBN("5000"), toBN("9001"), toBN("195")];
 
     describe("_setExpiryDate", () => {
       it("should set the right expiry date", async () => {
@@ -63,7 +62,27 @@ describe("ERC1238Expirable", function () {
       });
     });
 
+    describe("_setBatchExpiryDates", () => {
+      it("should set the right expiry dates", async () => {
+        await erc1238ExpirableMock.setBatchExpiryDates(tokenBatchIds, tokenBatchExpiryDates);
+
+        tokenBatchIds.forEach(async (id, index) => {
+          expect(await erc1238ExpirableMock.expiryDate(id)).to.eq(tokenBatchExpiryDates[index]);
+        });
+      });
+
+      it("should revert if the ids and dates length do not match", async () => {
+        await expect(
+          erc1238ExpirableMock.setBatchExpiryDates(tokenBatchIds, tokenBatchExpiryDates.slice(1)),
+        ).to.be.revertedWith("ERC1238Expirable: Ids and token URIs length mismatch");
+      });
+    });
+
     describe("isExpired", () => {
+      it("should revert if the no expiry date was set", async () => {
+        await expect(erc1238ExpirableMock.isExpired(0)).to.be.revertedWith("ERC1238Expirable: No expiry date set");
+      });
+
       it("should return false for a token that is not expired", async () => {
         await erc1238ExpirableMock.setExpiryDate(tokenId, tokenExpiryDate);
 
@@ -83,6 +102,26 @@ describe("ERC1238Expirable", function () {
         await increaseEVMTime(200);
 
         expect(await erc1238ExpirableMock.isExpired(tokenId)).to.be.true;
+      });
+    });
+
+    describe("expiryDate", () => {
+      it("should revert if the no expiry date was set", async () => {
+        await expect(erc1238ExpirableMock.expiryDate(0)).to.be.revertedWith("ERC1238Expirable: No expiry date set");
+      });
+    });
+
+    describe("Minting", () => {
+      it("should mint and set the right expiryDate", async () => {
+        await erc1238ExpirableMock.mintToContract(
+          contractRecipient.address,
+          tokenId,
+          mintAmount,
+          tokenExpiryDate,
+          data,
+        );
+
+        expect(await erc1238ExpirableMock.expiryDate(tokenId)).to.eq(tokenExpiryDate);
       });
     });
   });

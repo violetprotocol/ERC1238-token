@@ -15,6 +15,10 @@ contract ERC1238ExpirableMock is ERC1238, ERC1238Expirable {
         _setExpiryDate(id, date);
     }
 
+    function setBatchExpiryDates(uint256[] memory ids, uint256[] memory dates) external {
+        _setBatchExpiryDates(ids, dates);
+    }
+
     function mintToEOA(
         address to,
         uint256 id,
