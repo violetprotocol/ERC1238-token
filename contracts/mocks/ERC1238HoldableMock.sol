@@ -21,39 +21,31 @@ contract ERC1238HoldableMock is ERC1238, ERC1238Holdable {
         super._beforeMint(minter, to, id, amount, data);
     }
 
-    function _beforeBurn(
-        address burner,
-        address from,
-        uint256 id,
-        uint256 amount
-    ) internal override(ERC1238, ERC1238Holdable) {
-        super._beforeBurn(burner, from, id, amount);
-    }
-
-    function mint(
+    function mintToContract(
         address to,
         uint256 id,
         uint256 amount,
         bytes memory data
     ) public {
-        _mint(to, id, amount, data);
+        _mintToContract(to, id, amount, data);
     }
 
-    function mintBatch(
+    function mintBatchToContract(
         address to,
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory data
     ) public {
-        _mintBatch(to, ids, amounts, data);
+        _mintBatchToContract(to, ids, amounts, data);
     }
 
-    function burn(
-        address owner,
+    function burnHeldTokens(
+        address holder,
+        address from,
         uint256 id,
         uint256 amount
     ) public {
-        _burn(owner, id, amount);
+        _burnHeldTokens(msg.sender, holder, from, id, amount);
     }
 
     function burnBatch(
@@ -68,7 +60,7 @@ contract ERC1238HoldableMock is ERC1238, ERC1238Holdable {
         address to,
         uint256 id,
         uint256 amount
-    ) public override {
+    ) public {
         _entrust(to, id, amount);
     }
 }
