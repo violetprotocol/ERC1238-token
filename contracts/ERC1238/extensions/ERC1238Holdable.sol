@@ -41,7 +41,7 @@ abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
         require(_heldBalances[holder][id] >= amount, "ERC1238Holdable: Amount to burn exceeds amount held");
 
         if (holder.isContract()) {
-            try IERC1238Holder(holder).onBurnAcknowledged(id, amount) returns (bool isBurnAcknowledged) {
+            try IERC1238Holder(holder).onBurn(id, amount) returns (bool isBurnAcknowledged) {
                 if (!isBurnAcknowledged) emit BurnAcknowledgmentFailed(holder, burner, from, id, amount);
             } catch {
                 emit BurnAcknowledgmentFailed(holder, burner, from, id, amount);

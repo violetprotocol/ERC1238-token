@@ -11,5 +11,5 @@ interface IERC1238Holder is IERC1238Receiver {
     /**
      * @dev This function is called when tokens with id `id` are burnt.
      */
-    function onBurnAcknowledged(uint256 id, uint256 amount) external returns (bool);
+    function onBurn(uint256 id, uint256 amount) external returns (bool);
 }

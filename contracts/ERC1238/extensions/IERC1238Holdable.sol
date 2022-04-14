@@ -24,6 +24,11 @@ interface IERC1238Holdable is IERC1238 {
      */
     function heldBalance(address holder, uint256 id) external view returns (uint256);
 
+    /**
+     * @dev Lets sender entrusts `to` with `amount`
+     * of tokens which gets transferred between their respective balances
+     * of tokens held.
+     */
     function entrust(
         address to,
         uint256 id,

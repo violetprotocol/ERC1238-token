@@ -3,6 +3,7 @@ import { expect } from "chai";
 import { artifacts, ethers, waffle } from "hardhat";
 import type { Artifact } from "hardhat/types";
 import type { ERC1238HoldableMock } from "../../../src/types/ERC1238HoldableMock";
+import type { ERC1238HolderMock } from "../../../src/types/ERC1238HolderMock";
 import type { ERC1238ReceiverHoldableMock } from "../../../src/types/ERC1238ReceiverHoldableMock";
 import { ZERO_ADDRESS } from "../../utils/test-utils";
 
@@ -12,7 +13,6 @@ describe("ERC1238URIHoldable", function () {
   let erc1238Holdable: ERC1238HoldableMock;
   let admin: SignerWithAddress;
   let tokenOwnerContract: ERC1238ReceiverHoldableMock;
-  // let tokenOwnerContract2: ERC1238ReceiverHoldableMock;
   let eoa1: SignerWithAddress;
   let eoa2: SignerWithAddress;
 
@@ -198,6 +198,57 @@ describe("ERC1238URIHoldable", function () {
       await expect(
         erc1238Holdable.burnHeldTokens(eoa1.address, tokenOwnerContract.address, tokenId, stakedAmount + 1),
       ).to.be.revertedWith("ERC1238Holdable: Amount to burn exceeds amount held");
+    });
+  });
+
+  describe("Burning notification", () => {
+    const amountToBurn = mintAmount - 1000;
+    let tokenOwnerContract2: ERC1238ReceiverHoldableMock;
+
+    beforeEach(async () => {
+      await erc1238Holdable.mintToContract(tokenOwnerContract.address, tokenId, mintAmount, data);
+
+      const ERC1238ReceiverHoldableMockArtifact: Artifact = await artifacts.readArtifact("ERC1238ReceiverHoldableMock");
+
+      tokenOwnerContract2 = <ERC1238ReceiverHoldableMock>(
+        await waffle.deployContract(admin, ERC1238ReceiverHoldableMockArtifact)
+      );
+    });
+
+    it("should emit an event if burning acknowledgment failed", async () => {
+      await tokenOwnerContract.entrust(erc1238Holdable.address, tokenOwnerContract2.address, tokenId, amountToBurn);
+
+      const burnTx = await erc1238Holdable.burnHeldTokens(
+        tokenOwnerContract2.address,
+        tokenOwnerContract.address,
+        tokenId,
+        amountToBurn,
+      );
+
+      const receipt = await burnTx.wait();
+
+      // Checks that a BurnAcknowledgmentFailed event was emitted
+      expect(receipt.events?.findIndex(eventObject => eventObject.event === "BurnAcknowledgmentFailed")).to.not.eq(-1);
+    });
+
+    it("should not emit an event if a burn was acknowledged", async () => {
+      const ERC1238HolderMockArtifact: Artifact = await artifacts.readArtifact("ERC1238HolderMock");
+
+      const holderContract = <ERC1238HolderMock>await waffle.deployContract(admin, ERC1238HolderMockArtifact);
+
+      await tokenOwnerContract.entrust(erc1238Holdable.address, holderContract.address, tokenId, amountToBurn);
+
+      const burnTx = await erc1238Holdable.burnHeldTokens(
+        holderContract.address,
+        tokenOwnerContract.address,
+        tokenId,
+        amountToBurn,
+      );
+
+      const receipt = await burnTx.wait();
+
+      // Checks that a BurnAcknowledgmentFailed event was NOT emitted
+      expect(receipt.events?.findIndex(eventObject => eventObject.event === "BurnAcknowledgmentFailed")).to.eq(-1);
     });
   });
 });

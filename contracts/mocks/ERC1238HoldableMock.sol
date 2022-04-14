@@ -60,7 +60,7 @@ contract ERC1238HoldableMock is ERC1238, ERC1238Holdable {
         address to,
         uint256 id,
         uint256 amount
-    ) public {
+    ) public override {
         _entrust(to, id, amount);
     }
 }
