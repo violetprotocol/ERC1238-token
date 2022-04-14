@@ -20,6 +20,10 @@ abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
         return _heldBalances[holder][id];
     }
 
+    /**
+     * @dev Hooks into the minting flow to set the token recipient as first holder
+     * by default when tokens are minted.
+     */
     function _beforeMint(
         address,
         address to,
@@ -27,10 +31,17 @@ abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
         uint256 amount,
         bytes memory
     ) internal virtual override {
-        // set the token recipient as first holder by default when tokens are minted
         _heldBalances[to][id] += amount;
     }
 
+    /**
+     * @dev Burns `amount` of tokens that are held by `holder` and owned by `from`.
+     * If `holder` is a smart contract and inherits {IERC1238Holder}, it notifies it to give it a chance to
+     * react to the burn and handle the operation how it sees fit.
+     *
+     * Requirements:
+     * - `holder` should hold at least the `amount` of tokens with the `id` passed
+     */
     function _burnHeldTokens(
         address burner,
         address holder,
@@ -56,7 +67,6 @@ abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
     /**
      * @dev Lets sender entrusts `to` with `amount`
      * of tokens which gets transferred between their respective heldBalances
-     *
      */
     function _entrust(
         address to,
@@ -74,6 +84,6 @@ abstract contract ERC1238Holdable is IERC1238Holdable, ERC1238 {
         emit Entrust(from, to, id, amount);
     }
 
-    // TODO: entrustHolderContract to provide safer alternative which
-    // makes sure the recipient is a IERC1238Holder contract
+    // TODO: Add a function to provide a safer alternative which
+    // makes sure the recipient is a IERC1238Holder contract (same as idea as in IERC1238Receiver)
 }
