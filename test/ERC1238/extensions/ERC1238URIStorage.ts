@@ -28,6 +28,14 @@ const EMPTY_URI = "";
 //     erc1238UriMock = <ERC1238URIStorageMock>await waffle.deployContract(admin, ERC1238UriMockArtifact, [BASE_URI]);
 //   });
 
+// describe("ERC165", () => {
+//   it("should support the right interfaces", async () => {
+//     const supported = await shouldSupportInterfaces(erc1238Collection, ["IERC165", "IERC1238", "IERC1238URIStorage"]);
+
+//     expect(supported).to.eq(true);
+//   });
+// });
+
 //   describe("internal functions", () => {
 //     const data = "0x12345678";
 //     const tokenId = toBN("11223344");

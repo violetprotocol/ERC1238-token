@@ -6,7 +6,7 @@ import { chainIds } from "../../hardhat.config";
 import type { ERC1238Mock } from "../../src/types/ERC1238Mock";
 import type { ERC1238ReceiverMock } from "../../src/types/ERC1238ReceiverMock";
 import { getMintApprovalSignature, getMintBatchApprovalSignature } from "../../src/utils/ERC1238Approval";
-import { toBN, TOKEN_ID_ZERO, ZERO_ADDRESS } from "../utils/test-utils";
+import { shouldSupportInterfaces, toBN, TOKEN_ID_ZERO, ZERO_ADDRESS } from "../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
 
@@ -37,6 +37,20 @@ describe("ERC1238", function () {
     smartContractRecipient2 = <ERC1238ReceiverMock>(
       await waffle.deployContract(tokenRecipient, ERC1238ReceiverMockArtifact)
     );
+  });
+
+  describe("ERC165", () => {
+    it("should support the IERC1238 interface", async () => {
+      const supported = await shouldSupportInterfaces(erc1238Mock, ["IERC165", "IERC1238"]);
+
+      expect(supported).to.eq(true);
+    });
+
+    it("should support the IERC1238Receiver interface", async () => {
+      const supported = await shouldSupportInterfaces(smartContractRecipient1, ["IERC1238Receiver"]);
+
+      expect(supported).to.eq(true);
+    });
   });
 
   describe("public functions", () => {

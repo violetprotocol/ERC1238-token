@@ -17,6 +17,16 @@ contract Badge is ERC1238, ERC1238URIStorage {
         _;
     }
 
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC1238, ERC1238URIStorage)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
+
     function setOwner(address newOwner) external onlyOwner {
         require(newOwner != address(0), "Invalid address for new owner");
         owner = newOwner;

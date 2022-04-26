@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../ERC1238.sol";
 import "./IERC1238Collection.sol";
+import "../../utils/ERC165.sol";
 
 /**
  * @dev See {IERC1238Collection}.
@@ -11,9 +12,19 @@ import "./IERC1238Collection.sol";
  * Values are packed the following way in the id:
  * [baseId (48 bits)][owner (160 bits)][counter (48 bits)]
  */
-abstract contract ERC1238Collection is IERC1238Collection, ERC1238 {
+abstract contract ERC1238Collection is ERC165, IERC1238Collection, ERC1238 {
     // owner => baseId => balance
     mapping(address => mapping(uint48 => uint256)) internal _baseIdBalances;
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC1238, ERC165, IERC165)
+        returns (bool)
+    {
+        return interfaceId == type(IERC1238Collection).interfaceId || super.supportsInterface(interfaceId);
+    }
 
     /**
      * @dev Returns an address' balance for a given `baseId`.
