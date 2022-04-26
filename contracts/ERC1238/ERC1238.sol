@@ -6,12 +6,13 @@ import "./IERC1238.sol";
 import "./ERC1238Approval.sol";
 import "./IERC1238Receiver.sol";
 import "../utils/AddressMinimal.sol";
+import "../utils/ERC165.sol";
 
 /**
  * @dev Implementation proposal for non-transferable (Badge) tokens
  * See https://github.com/ethereum/EIPs/issues/1238
  */
-contract ERC1238 is IERC1238, ERC1238Approval {
+contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
     using Address for address;
 
     // Mapping from token ID to account balances
@@ -29,11 +30,9 @@ contract ERC1238 is IERC1238, ERC1238Approval {
         _setBaseURI(baseURI_);
     }
 
-    // TODO: Add support for ERC165
-    // function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
-    //     return
-    //
-    // }
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC165, IERC165) returns (bool) {
+        return interfaceId == type(IERC1238).interfaceId || super.supportsInterface(interfaceId);
+    }
 
     /**
      * @dev This implementation returns the same URI for *all* token types. It relies

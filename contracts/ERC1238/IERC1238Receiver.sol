@@ -2,10 +2,12 @@
 
 pragma solidity ^0.8.0;
 
+import "../utils/IERC165.sol";
+
 /**
- *
+ * Interface for smart contracts wishing to receive ownership of ERC1238 tokens.
  */
-interface IERC1238Receiver {
+interface IERC1238Receiver is IERC165 {
     /**
      * @dev Handles the receipt of a single ERC1238 token type.
      *
