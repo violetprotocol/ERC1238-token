@@ -9,6 +9,8 @@ export const toBN = (units: string, decimalPlaces: number = 18) => ethers.utils.
 export const formatBN = (amount: BigNumberish, decimalPlaces: number = 18) =>
   ethers.utils.formatUnits(amount, decimalPlaces);
 
+// Taken from OpenZeppeling test-helpers
+// https://github.com/OpenZeppelin/openzeppelin-test-helpers/blob/a7c3af4192fd0ad2a61a4ebac66097f5b5934e92/src/makeInterfaceId.js
 export const getERC165InterfaceId = (functionSignatures: string[] = []) => {
   const INTERFACE_ID_LENGTH = 4;
 
