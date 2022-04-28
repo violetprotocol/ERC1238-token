@@ -11,6 +11,16 @@ contract ERC1238URIStorageMock is ERC1238, ERC1238URIStorage {
 
     constructor(string memory uri) ERC1238(uri) {}
 
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC1238, ERC1238URIStorage)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
+
     function setTokenURI(uint256 id, string memory _tokenURI) external {
         _setTokenURI(id, _tokenURI);
     }

@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "../utils/IERC165.sol";
+
 /**
  * @dev Interface proposal for Badge tokens
  * See https://github.com/ethereum/EIPs/issues/1238
  */
-interface IERC1238 {
+interface IERC1238 is IERC165 {
     /**
      * @dev Emitted when `amount` tokens of token type `id` are minted to `to` by `minter`.
      */

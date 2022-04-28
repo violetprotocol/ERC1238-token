@@ -6,6 +6,16 @@ import "../ERC1238/extensions/ERC1238Collection.sol";
 contract ERC1238CollectionMock is ERC1238, ERC1238Collection {
     constructor(string memory baseURI_) ERC1238(baseURI_) {}
 
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC1238, ERC1238Collection)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
+
     function _beforeMint(
         address minter,
         address to,

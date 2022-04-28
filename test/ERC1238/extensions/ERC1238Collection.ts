@@ -5,7 +5,7 @@ import { artifacts, ethers, waffle } from "hardhat";
 import type { Artifact } from "hardhat/types";
 import type { ERC1238CollectionMock } from "../../../src/types/ERC1238CollectionMock";
 import { ERC1238ReceiverMock } from "../../../src/types/ERC1238ReceiverMock";
-import { toBN, ZERO_ADDRESS } from "../../utils/test-utils";
+import { shouldSupportInterfaces, toBN, ZERO_ADDRESS } from "../../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
 
@@ -29,6 +29,14 @@ describe("ERC1238Collection", function () {
     );
     const ERC1238ReceiverMockArtifact: Artifact = await artifacts.readArtifact("ERC1238ReceiverMock");
     smartContractRecipient1 = <ERC1238ReceiverMock>await waffle.deployContract(admin, ERC1238ReceiverMockArtifact);
+  });
+
+  describe("ERC165", () => {
+    it("should support the right interfaces", async () => {
+      const supported = await shouldSupportInterfaces(erc1238Collection, ["IERC165", "IERC1238", "IERC1238Collection"]);
+
+      expect(supported).to.eq(true);
+    });
   });
 
   describe("internal functions", () => {
