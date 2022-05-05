@@ -432,14 +432,6 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         }
     }
 
-    // Could have that in a library instead of redeploying it every time?
-    function _asSingletonArray(uint256 element) private pure returns (uint256[] memory) {
-        uint256[] memory array = new uint256[](1);
-        array[0] = element;
-
-        return array;
-    }
-
     function splitSignature(bytes memory sig)
         public
         pure
