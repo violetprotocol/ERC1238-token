@@ -4,6 +4,8 @@
 
 This repository contains work-in-progress implementation proposal(s) for Non-transferable Tokens (see https://github.com/ethereum/EIPs/issues/1238).
 
+Documentation available here: https://erc1238.notion.site/
+
 ## Usage
 
 ### Pre Requisites
