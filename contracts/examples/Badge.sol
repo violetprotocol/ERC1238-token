@@ -32,7 +32,7 @@ contract Badge is ERC1238, ERC1238URIStorage {
         owner = newOwner;
     }
 
-    function setBaseURI(string memory newBaseURI) external onlyOwner {
+    function setBaseURI(string calldata newBaseURI) external onlyOwner {
         _setBaseURI(newBaseURI);
     }
 
@@ -43,10 +43,11 @@ contract Badge is ERC1238, ERC1238URIStorage {
         uint8 v,
         bytes32 r,
         bytes32 s,
-        string memory uri,
-        bytes memory data
+        uint256 approvalExpiry,
+        string calldata uri,
+        bytes calldata data
     ) external onlyOwner {
-        _mintToEOA(to, id, amount, v, r, s, data);
+        _mintToEOA(to, id, amount, v, r, s, approvalExpiry, data);
         _setTokenURI(id, uri);
     }
 
@@ -54,19 +55,20 @@ contract Badge is ERC1238, ERC1238URIStorage {
         address to,
         uint256 id,
         uint256 amount,
-        string memory uri,
-        bytes memory data
+        string calldata uri,
+        bytes calldata data
     ) external onlyOwner {
         _mintToContract(to, id, amount, data);
         _setTokenURI(id, uri);
     }
 
     function mintBundle(
-        address[] memory to,
-        uint256[][] memory ids,
-        uint256[][] memory amounts,
-        string[][] memory uris,
-        bytes[] memory data
+        address[] calldata to,
+        uint256[][] calldata ids,
+        uint256[][] calldata amounts,
+        string[][] calldata uris,
+        MintApprovalSignature[] calldata mintApprovalSignatures,
+        bytes[] calldata data
     ) external onlyOwner {
         for (uint256 i = 0; i < to.length; i++) {
             _setBatchTokenURI(ids[i], uris[i]);
@@ -74,8 +76,18 @@ contract Badge is ERC1238, ERC1238URIStorage {
             if (to[i].isContract()) {
                 _mintBatchToContract(to[i], ids[i], amounts[i], data[i]);
             } else {
-                (bytes32 r, bytes32 s, uint8 v) = splitSignature(data[i]);
-                _mintBatchToEOA(to[i], ids[i], amounts[i], v, r, s, data[i]);
+                MintApprovalSignature calldata signature = mintApprovalSignatures[i];
+
+                _mintBatchToEOA(
+                    to[i],
+                    ids[i],
+                    amounts[i],
+                    signature.v,
+                    signature.r,
+                    signature.s,
+                    signature.approvalExpiry,
+                    data[i]
+                );
             }
         }
     }
@@ -95,8 +107,8 @@ contract Badge is ERC1238, ERC1238URIStorage {
 
     function burnBatch(
         address from,
-        uint256[] memory ids,
-        uint256[] memory amounts,
+        uint256[] calldata ids,
+        uint256[] calldata amounts,
         bool deleteURI
     ) external onlyOwner {
         if (deleteURI) {
@@ -135,8 +147,8 @@ contract Badge is ERC1238, ERC1238URIStorage {
      */
     function _burnBatchAndDeleteURIs(
         address from,
-        uint256[] memory ids,
-        uint256[] memory amounts
+        uint256[] calldata ids,
+        uint256[] calldata amounts
     ) internal virtual {
         require(from != address(0), "ERC1238: burn from the zero address");
         require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");

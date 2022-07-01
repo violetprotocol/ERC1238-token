@@ -153,6 +153,7 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
      *
      * - `v`, `r` and `s` must be a EIP712 signature from `to` as defined by ERC1238Approval to
      * approve the minting transaction.
+     * - `approvalExpiry`, which is part of the signed data, cannot be in the past.
      *
      * Emits a {MintSingle} event.
      */
@@ -163,9 +164,12 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         uint8 v,
         bytes32 r,
         bytes32 s,
+        uint256 approvalExpiry,
         bytes memory data
     ) internal virtual {
-        bytes32 messageHash = _getMintApprovalMessageHash(to, id, amount);
+        require(approvalExpiry >= block.timestamp, "ERC1238: invalid approval expiry time");
+
+        bytes32 messageHash = _getMintApprovalMessageHash(to, id, amount, approvalExpiry);
         _verifyMintingApproval(to, messageHash, v, r, s);
 
         _mint(to, id, amount, data);
@@ -202,6 +206,7 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
      * Requirements:
      * - `v`, `r` and `s` must be a EIP712 signature from `to` as defined by ERC1238Approval to
      * approve the batch minting transaction.
+     * - `approvalExpiry`, which is part of the signed data, cannot be in the past.
      *
      * Emits a {MintBatch} event.
      */
@@ -212,9 +217,12 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         uint8 v,
         bytes32 r,
         bytes32 s,
+        uint256 approvalExpiry,
         bytes memory data
     ) internal virtual {
-        bytes32 messageHash = _getMintBatchApprovalMessageHash(to, ids, amounts);
+        require(approvalExpiry >= block.timestamp, "ERC1238: invalid approval expiry time");
+
+        bytes32 messageHash = _getMintBatchApprovalMessageHash(to, ids, amounts, approvalExpiry);
         _verifyMintingApproval(to, messageHash, v, r, s);
 
         _mintBatch(to, ids, amounts, data);
@@ -232,17 +240,27 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
      * Emits multiple {MintBatch} events.
      */
     function _mintBundle(
-        address[] memory to,
-        uint256[][] memory ids,
-        uint256[][] memory amounts,
-        bytes[] memory data
+        address[] calldata to,
+        uint256[][] calldata ids,
+        uint256[][] calldata amounts,
+        MintApprovalSignature[] calldata mintApprovalSignatures,
+        bytes[] calldata data
     ) internal virtual {
         for (uint256 i = 0; i < to.length; i++) {
             if (to[i].isContract()) {
                 _mintBatchToContract(to[i], ids[i], amounts[i], data[i]);
             } else {
-                (bytes32 r, bytes32 s, uint8 v) = splitSignature(data[i]);
-                _mintBatchToEOA(to[i], ids[i], amounts[i], v, r, s, data[i]);
+                MintApprovalSignature calldata signature = mintApprovalSignatures[i];
+                _mintBatchToEOA(
+                    to[i],
+                    ids[i],
+                    amounts[i],
+                    signature.v,
+                    signature.r,
+                    signature.s,
+                    signature.approvalExpiry,
+                    data[i]
+                );
             }
         }
     }
@@ -430,37 +448,5 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         } catch {
             revert("ERC1238: transfer to non ERC1238Receiver implementer");
         }
-    }
-
-    function splitSignature(bytes memory sig)
-        public
-        pure
-        returns (
-            bytes32 r,
-            bytes32 s,
-            uint8 v
-        )
-    {
-        require(sig.length == 65, "invalid signature length");
-
-        assembly {
-            /*
-            First 32 bytes stores the length of the signature
-
-            add(sig, 32) = pointer of sig + 32
-            effectively, skips first 32 bytes of signature
-
-            mload(p) loads next 32 bytes starting at the memory address p into memory
-            */
-
-            // first 32 bytes, after the length prefix
-            r := mload(add(sig, 32))
-            // second 32 bytes
-            s := mload(add(sig, 64))
-            // final byte (first byte of the next 32 bytes)
-            v := byte(0, mload(add(sig, 96)))
-        }
-
-        // implicitly return (r, s, v)
     }
 }

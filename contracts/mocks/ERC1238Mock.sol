@@ -26,9 +26,10 @@ contract ERC1238Mock is ERC1238 {
         uint8 v,
         bytes32 r,
         bytes32 s,
+        uint256 approvalExpiry,
         bytes memory data
     ) external {
-        _mintToEOA(to, id, amount, v, r, s, data);
+        _mintToEOA(to, id, amount, v, r, s, approvalExpiry, data);
     }
 
     function mintToContract(
@@ -47,9 +48,10 @@ contract ERC1238Mock is ERC1238 {
         uint8 v,
         bytes32 r,
         bytes32 s,
+        uint256 approvalExpiry,
         bytes memory data
     ) external {
-        _mintBatchToEOA(to, ids, amounts, v, r, s, data);
+        _mintBatchToEOA(to, ids, amounts, v, r, s, approvalExpiry, data);
     }
 
     function mintBatchToContract(
