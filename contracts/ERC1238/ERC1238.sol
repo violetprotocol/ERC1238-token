@@ -69,10 +69,10 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         override
         returns (uint256[] memory)
     {
-        uint256[] memory batchBalances = new uint256[](ids.length);
+        uint256 idsLength = ids.length;
+        uint256[] memory batchBalances = new uint256[](idsLength);
 
-        uint256 length = ids.length;
-        for (uint256 i = 0; i < length; ++i) {
+        for (uint256 i = 0; i < idsLength; ++i) {
             batchBalances[i] = balanceOf(account, ids[i]);
         }
 
@@ -90,10 +90,10 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         override
         returns (uint256[][] memory)
     {
-        uint256[][] memory bundleBalances = new uint256[][](accounts.length);
+        uint256 accountsLength = accounts.length;
+        uint256[][] memory bundleBalances = new uint256[][](accountsLength);
 
-        uint256 length = accounts.length;
-        for (uint256 i = 0; i < length; ++i) {
+        for (uint256 i = 0; i < accountsLength; ++i) {
             bundleBalances[i] = balanceOfBatch(accounts[i], ids[i]);
         }
 
@@ -246,7 +246,8 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         MintApprovalSignature[] calldata mintApprovalSignatures,
         bytes[] calldata data
     ) internal virtual {
-        for (uint256 i = 0; i < to.length; i++) {
+        uint256 toLength = to.length;
+        for (uint256 i = 0; i < toLength; i++) {
             if (to[i].isContract()) {
                 _mintBatchToContract(to[i], ids[i], amounts[i], data[i]);
             } else {
@@ -307,11 +308,12 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         uint256[] memory amounts,
         bytes memory data
     ) private {
-        require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
+        uint256 idsLength = ids.length;
+        require(idsLength == amounts.length, "ERC1238: ids and amounts length mismatch");
 
         address minter = msg.sender;
 
-        for (uint256 i = 0; i < ids.length; i++) {
+        for (uint256 i = 0; i < idsLength; i++) {
             _beforeMint(minter, to, ids[i], amounts[i], data);
 
             _balances[ids[i]][to] += amounts[i];
@@ -365,11 +367,13 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         uint256[] memory amounts
     ) internal virtual {
         require(from != address(0), "ERC1238: burn from the zero address");
-        require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
+
+        uint256 idsLength = ids.length;
+        require(idsLength == amounts.length, "ERC1238: ids and amounts length mismatch");
 
         address burner = msg.sender;
 
-        for (uint256 i = 0; i < ids.length; i++) {
+        for (uint256 i = 0; i < idsLength; i++) {
             uint256 id = ids[i];
             uint256 amount = amounts[i];
 

@@ -63,7 +63,8 @@ contract ERC1238URIStorageMock is ERC1238, ERC1238URIStorage {
         MintApprovalSignature[] calldata mintApprovalSignatures,
         bytes[] calldata data
     ) external {
-        for (uint256 i = 0; i < to.length; i++) {
+        uint256 toLength = to.length;
+        for (uint256 i = 0; i < toLength; i++) {
             _setBatchTokenURI(ids[i], uris[i]);
 
             if (to[i].isContract()) {
@@ -101,11 +102,13 @@ contract ERC1238URIStorageMock is ERC1238, ERC1238URIStorage {
         uint256[] calldata amounts
     ) external {
         require(from != address(0), "ERC1238: burn from the zero address");
-        require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
+
+        uint256 idsLength = ids.length;
+        require(idsLength == amounts.length, "ERC1238: ids and amounts length mismatch");
 
         address burner = msg.sender;
 
-        for (uint256 i = 0; i < ids.length; i++) {
+        for (uint256 i = 0; i < idsLength; i++) {
             uint256 id = ids[i];
             uint256 amount = amounts[i];
 

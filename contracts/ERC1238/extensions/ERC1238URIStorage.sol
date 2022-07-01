@@ -54,9 +54,10 @@ abstract contract ERC1238URIStorage is ERC165, IERC1238URIStorage, ERC1238 {
      *
      */
     function _setBatchTokenURI(uint256[] memory ids, string[] memory tokenURIs) internal {
-        require(ids.length == tokenURIs.length, "ERC1238Storage: ids and token URIs length mismatch");
+        uint256 idsLength = ids.length;
+        require(idsLength == tokenURIs.length, "ERC1238Storage: ids and token URIs length mismatch");
 
-        for (uint256 i = 0; i < ids.length; i++) {
+        for (uint256 i = 0; i < idsLength; i++) {
             _setTokenURI(ids[i], tokenURIs[i]);
         }
     }
