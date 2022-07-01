@@ -1,5 +1,6 @@
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { expect } from "chai";
+import { BigNumber } from "ethers";
 import { artifacts, ethers, waffle } from "hardhat";
 import type { Artifact } from "hardhat/types";
 import { chainIds } from "../../hardhat.config";
@@ -9,6 +10,7 @@ import { getMintApprovalSignature, getMintBatchApprovalSignature } from "../../s
 import { shouldSupportInterfaces, toBN, TOKEN_ID_ZERO, ZERO_ADDRESS } from "../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
+const twoDaysInSeconds = 172800;
 
 // TODO: add tests for _mintBundle
 describe("ERC1238", function () {
@@ -19,6 +21,8 @@ describe("ERC1238", function () {
   let tokenBatchRecipient: SignerWithAddress;
   let smartContractRecipient1: ERC1238ReceiverMock;
   let smartContractRecipient2: ERC1238ReceiverMock;
+
+  let approvalExpiry: BigNumber;
 
   before(async function () {
     const signers: SignerWithAddress[] = await ethers.getSigners();
@@ -102,23 +106,27 @@ describe("ERC1238", function () {
       let r: string;
       let s: string;
       beforeEach(async () => {
+        const dateNow = Math.floor(Date.now() / 1000);
+        approvalExpiry = BigNumber.from(dateNow + twoDaysInSeconds);
+
         ({ v, r, s } = await getMintApprovalSignature({
           signer: tokenRecipient,
           erc1238ContractAddress: erc1238Mock.address,
           chainId,
           id: tokenId,
           amount: mintAmount,
+          approvalExpiry,
         }));
       });
 
       it("should revert with an invalid signature", async () => {
         await expect(
-          erc1238Mock.connect(admin).mintToEOA(ZERO_ADDRESS, tokenId, mintAmount, v, r, s, data),
+          erc1238Mock.connect(admin).mintToEOA(ZERO_ADDRESS, tokenId, mintAmount, v, r, s, approvalExpiry, data),
         ).to.be.revertedWith("ERC1238: Approval verification failed");
       });
 
       it("should credit the amount of tokens", async () => {
-        await erc1238Mock.mintToEOA(tokenRecipient.address, tokenId, mintAmount, v, r, s, data);
+        await erc1238Mock.mintToEOA(tokenRecipient.address, tokenId, mintAmount, v, r, s, approvalExpiry, data);
 
         const balance = await erc1238Mock.balanceOf(tokenRecipient.address, tokenId);
 
@@ -126,7 +134,7 @@ describe("ERC1238", function () {
       });
 
       it("should emit a MintSingle event", async () => {
-        await expect(erc1238Mock.mintToEOA(tokenRecipient.address, tokenId, mintAmount, v, r, s, data))
+        await expect(erc1238Mock.mintToEOA(tokenRecipient.address, tokenId, mintAmount, v, r, s, approvalExpiry, data))
           .to.emit(erc1238Mock, "MintSingle")
           .withArgs(admin.address, tokenRecipient.address, tokenId, mintAmount);
       });
@@ -161,18 +169,24 @@ describe("ERC1238", function () {
       let s: string;
 
       beforeEach(async () => {
+        const dateNow = Math.floor(Date.now() / 1000);
+        approvalExpiry = BigNumber.from(dateNow + twoDaysInSeconds);
+
         ({ v, r, s } = await getMintBatchApprovalSignature({
           signer: tokenBatchRecipient,
           erc1238ContractAddress: erc1238Mock.address,
           chainId,
           ids: tokenBatchIds,
           amounts: mintBatchAmounts,
+          approvalExpiry,
         }));
       });
 
       it("should revert with an invalid signature", async () => {
         await expect(
-          erc1238Mock.connect(admin).mintBatchToEOA(ZERO_ADDRESS, tokenBatchIds, mintBatchAmounts, v, r, s, data),
+          erc1238Mock
+            .connect(admin)
+            .mintBatchToEOA(ZERO_ADDRESS, tokenBatchIds, mintBatchAmounts, v, r, s, approvalExpiry, data),
         ).to.be.revertedWith("ERC1238: Approval verification failed");
       });
 
@@ -183,19 +197,29 @@ describe("ERC1238", function () {
           chainId,
           ids: tokenBatchIds.slice(1),
           amounts: mintBatchAmounts,
+          approvalExpiry,
         }));
 
         await expect(
           erc1238Mock
             .connect(admin)
-            .mintBatchToEOA(tokenBatchRecipient.address, tokenBatchIds.slice(1), mintBatchAmounts, v, r, s, data),
+            .mintBatchToEOA(
+              tokenBatchRecipient.address,
+              tokenBatchIds.slice(1),
+              mintBatchAmounts,
+              v,
+              r,
+              s,
+              approvalExpiry,
+              data,
+            ),
         ).to.be.revertedWith("ERC1238: ids and amounts length mismatch");
       });
 
       it("should credit the minted tokens", async () => {
         await erc1238Mock
           .connect(admin)
-          .mintBatchToEOA(tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts, v, r, s, data);
+          .mintBatchToEOA(tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts, v, r, s, approvalExpiry, data);
 
         tokenBatchIds.forEach(async (tokenId, index) =>
           expect(await erc1238Mock.balanceOf(tokenBatchRecipient.address, tokenId)).to.eq(mintBatchAmounts[index]),
@@ -204,7 +228,16 @@ describe("ERC1238", function () {
 
       it("should emit a MintBatch event", async () => {
         await expect(
-          erc1238Mock.mintBatchToEOA(tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts, v, r, s, data),
+          erc1238Mock.mintBatchToEOA(
+            tokenBatchRecipient.address,
+            tokenBatchIds,
+            mintBatchAmounts,
+            v,
+            r,
+            s,
+            approvalExpiry,
+            data,
+          ),
         )
           .to.emit(erc1238Mock, "MintBatch")
           .withArgs(admin.address, tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts);
