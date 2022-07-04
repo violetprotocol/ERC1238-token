@@ -14,6 +14,7 @@ const MintApprovaltypes = {
     { name: "recipient", type: "address" },
     { name: "id", type: "uint256" },
     { name: "amount", type: "uint256" },
+    { name: "approvalExpiry", type: "uint256" },
   ],
 };
 const MintBatchApprovalTypes = {
@@ -21,6 +22,7 @@ const MintBatchApprovalTypes = {
     { name: "recipient", type: "address" },
     { name: "ids", type: "uint256[]" },
     { name: "amounts", type: "uint256[]" },
+    { name: "approvalExpiry", type: "uint256" },
   ],
 };
 
@@ -29,12 +31,14 @@ type MintApprovalStruct = {
   recipient: string;
   id: BigNumberish;
   amount: BigNumberish;
+  approvalExpiry: BigNumberish;
 };
 
 type MintBatchApprovalStruct = {
   recipient: string;
   ids: BigNumberish[];
   amounts: BigNumberish[];
+  approvalExpiry: BigNumberish;
 };
 
 export const getMintApprovalSignature = async ({
@@ -43,12 +47,14 @@ export const getMintApprovalSignature = async ({
   chainId,
   id,
   amount,
+  approvalExpiry,
 }: {
   signer: SignerWithAddress;
   erc1238ContractAddress: string;
   chainId: number;
   id: BigNumberish;
   amount: BigNumberish;
+  approvalExpiry: BigNumberish;
 }): Promise<Signature & { fullSignature: string }> => {
   const domain = getDomain(chainId, erc1238ContractAddress);
 
@@ -56,6 +62,7 @@ export const getMintApprovalSignature = async ({
     recipient: signer.address,
     id,
     amount,
+    approvalExpiry,
   };
 
   let sig: string;
@@ -75,22 +82,25 @@ export const getMintBatchApprovalSignature = async ({
   chainId,
   ids,
   amounts,
+  approvalExpiry,
 }: {
   signer: SignerWithAddress;
   erc1238ContractAddress: string;
   chainId: number;
   ids: BigNumberish[];
   amounts: BigNumberish[];
-}): Promise<Signature & { fullSignature: string }> => {
+  approvalExpiry: BigNumberish;
+}): Promise<Signature & { approvalExpiry: BigNumberish; fullSignature: string }> => {
   const domain = getDomain(chainId, erc1238ContractAddress);
 
   const value: MintBatchApprovalStruct = {
     recipient: signer.address,
     ids,
     amounts,
+    approvalExpiry,
   };
 
   const sig = await signer._signTypedData(domain, MintBatchApprovalTypes, value);
 
-  return { fullSignature: sig, ...ethers.utils.splitSignature(sig) };
+  return { fullSignature: sig, approvalExpiry, ...ethers.utils.splitSignature(sig) };
 };

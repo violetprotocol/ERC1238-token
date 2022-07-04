@@ -1,5 +1,6 @@
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { expect } from "chai";
+import { BigNumber, BytesLike } from "ethers";
 import { artifacts, ethers, waffle } from "hardhat";
 import type { Artifact } from "hardhat/types";
 import { chainIds } from "../../hardhat.config";
@@ -10,6 +11,7 @@ import { toBN } from "../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const twoDaysInSeconds = 172800;
 
 // ~ WIP! ~
 describe("Badge", function () {
@@ -19,6 +21,7 @@ describe("Badge", function () {
   let signer1: SignerWithAddress;
   let eoaRecipient: SignerWithAddress;
   let contractRecipient: ERC1238ReceiverMock;
+  let approvalExpiry: BigNumber;
 
   before(async function () {
     const signers: SignerWithAddress[] = await ethers.getSigners();
@@ -66,6 +69,7 @@ describe("Badge", function () {
     let to: string[];
     beforeEach(() => {
       to = [signer1.address, contractRecipient.address, eoaRecipient.address];
+      approvalExpiry = BigNumber.from(Math.floor(Date.now() / 1000) + twoDaysInSeconds);
     });
     const tokenBatchIds = [toBN("2000"), toBN("2010"), toBN("2020")];
     const tokenBatchURIs = [
@@ -78,6 +82,13 @@ describe("Badge", function () {
     const ids = [tokenBatchIds, tokenBatchIds, tokenBatchIds];
     const amounts = [mintBatchAmounts, mintBatchAmounts, mintBatchAmounts];
     const uris = [tokenBatchURIs, tokenBatchURIs, tokenBatchURIs];
+    const data: BytesLike[] = ["0x1234", "0x3544", "0xdeadbeef"];
+    const emptySignature = {
+      v: BigNumber.from(0),
+      r: ethers.constants.HashZero,
+      s: ethers.constants.HashZero,
+      approvalExpiry: BigNumber.from(0),
+    };
 
     it("should mint a bundle to multiple addresses", async () => {
       const signatureFromSigner1 = await getMintBatchApprovalSignature({
@@ -86,6 +97,7 @@ describe("Badge", function () {
         signer: signer1,
         ids: ids[0],
         amounts: amounts[0],
+        approvalExpiry,
       });
 
       const signatureFromEoaRecipient = await getMintBatchApprovalSignature({
@@ -94,16 +106,25 @@ describe("Badge", function () {
         signer: eoaRecipient,
         ids: ids[2],
         amounts: amounts[2],
+        approvalExpiry,
+      });
+      const signatures = [signatureFromSigner1, emptySignature, signatureFromEoaRecipient];
+
+      await badge.mintBundle(to, ids, amounts, uris, signatures, data);
+
+      const balancesOfRecipient1: BigNumber[] = await badge.balanceOfBatch(to[0], ids[0]);
+      balancesOfRecipient1.forEach((balance, j) => {
+        expect(balance).to.eq(amounts[0][j]);
       });
 
-      const data = [signatureFromSigner1.fullSignature, [], signatureFromEoaRecipient.fullSignature];
+      const balancesOfRecipient2: BigNumber[] = await badge.balanceOfBatch(to[1], ids[1]);
+      balancesOfRecipient2.forEach((balance, i) => {
+        expect(balance).to.eq(amounts[1][i]);
+      });
 
-      await badge.mintBundle(to, ids, amounts, uris, data);
-
-      to.forEach(async (recipient, i) => {
-        ids[i].forEach(async (id, j) => {
-          expect(await badge.balanceOf(recipient, id)).to.eq(amounts[i][j]);
-        });
+      const balancesOfRecipient3: BigNumber[] = await badge.balanceOfBatch(to[2], ids[2]);
+      balancesOfRecipient3.forEach((balance, i) => {
+        expect(balance).to.eq(amounts[2][i]);
       });
 
       ids.forEach(async (tokenBatchIds, i) =>
@@ -111,6 +132,12 @@ describe("Badge", function () {
           expect(await badge.tokenURI(id)).to.eq(uris[i][j]);
         }),
       );
+
+      // Fetch the URI set for each token id as a flattened array
+      const setURIs = await Promise.all(ids.flat().map(async tokenId => await badge.tokenURI(tokenId)));
+      const expectedFlattenedURIs = uris.flat();
+
+      expect(expectedFlattenedURIs).to.eql(setURIs);
     });
 
     it("should emit MintBatch events", async () => {
@@ -120,6 +147,7 @@ describe("Badge", function () {
         signer: signer1,
         ids: ids[0],
         amounts: amounts[0],
+        approvalExpiry,
       });
 
       const signatureFromEoaRecipient = await getMintBatchApprovalSignature({
@@ -128,11 +156,12 @@ describe("Badge", function () {
         signer: eoaRecipient,
         ids: ids[2],
         amounts: amounts[2],
+        approvalExpiry,
       });
 
-      const data = [signatureFromSigner1.fullSignature, [], signatureFromEoaRecipient.fullSignature];
+      const signatures = [signatureFromSigner1, emptySignature, signatureFromEoaRecipient];
 
-      const tx = badge.mintBundle(to, ids, amounts, uris, data);
+      const tx = badge.mintBundle(to, ids, amounts, uris, signatures, data);
 
       await expect(tx).to.emit(badge, "MintBatch").withArgs(admin.address, to[0], ids[0], amounts[0]);
       await expect(tx).to.emit(badge, "MintBatch").withArgs(admin.address, to[1], ids[1], amounts[1]);

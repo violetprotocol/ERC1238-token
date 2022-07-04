@@ -69,10 +69,10 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         override
         returns (uint256[] memory)
     {
-        uint256[] memory batchBalances = new uint256[](ids.length);
+        uint256 idsLength = ids.length;
+        uint256[] memory batchBalances = new uint256[](idsLength);
 
-        uint256 length = ids.length;
-        for (uint256 i = 0; i < length; ++i) {
+        for (uint256 i = 0; i < idsLength; ++i) {
             batchBalances[i] = balanceOf(account, ids[i]);
         }
 
@@ -90,10 +90,10 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         override
         returns (uint256[][] memory)
     {
-        uint256[][] memory bundleBalances = new uint256[][](accounts.length);
+        uint256 accountsLength = accounts.length;
+        uint256[][] memory bundleBalances = new uint256[][](accountsLength);
 
-        uint256 length = accounts.length;
-        for (uint256 i = 0; i < length; ++i) {
+        for (uint256 i = 0; i < accountsLength; ++i) {
             bundleBalances[i] = balanceOfBatch(accounts[i], ids[i]);
         }
 
@@ -153,6 +153,7 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
      *
      * - `v`, `r` and `s` must be a EIP712 signature from `to` as defined by ERC1238Approval to
      * approve the minting transaction.
+     * - `approvalExpiry`, which is part of the signed data, cannot be in the past.
      *
      * Emits a {MintSingle} event.
      */
@@ -163,9 +164,12 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         uint8 v,
         bytes32 r,
         bytes32 s,
+        uint256 approvalExpiry,
         bytes memory data
     ) internal virtual {
-        bytes32 messageHash = _getMintApprovalMessageHash(to, id, amount);
+        require(approvalExpiry >= block.timestamp, "ERC1238: provided approval expiry time cannot be in the past");
+
+        bytes32 messageHash = _getMintApprovalMessageHash(to, id, amount, approvalExpiry);
         _verifyMintingApproval(to, messageHash, v, r, s);
 
         _mint(to, id, amount, data);
@@ -202,6 +206,7 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
      * Requirements:
      * - `v`, `r` and `s` must be a EIP712 signature from `to` as defined by ERC1238Approval to
      * approve the batch minting transaction.
+     * - `approvalExpiry`, which is part of the signed data, cannot be in the past.
      *
      * Emits a {MintBatch} event.
      */
@@ -212,9 +217,12 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         uint8 v,
         bytes32 r,
         bytes32 s,
+        uint256 approvalExpiry,
         bytes memory data
     ) internal virtual {
-        bytes32 messageHash = _getMintBatchApprovalMessageHash(to, ids, amounts);
+        require(approvalExpiry >= block.timestamp, "ERC1238: provided approval expiry time cannot be in the past");
+
+        bytes32 messageHash = _getMintBatchApprovalMessageHash(to, ids, amounts, approvalExpiry);
         _verifyMintingApproval(to, messageHash, v, r, s);
 
         _mintBatch(to, ids, amounts, data);
@@ -232,17 +240,28 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
      * Emits multiple {MintBatch} events.
      */
     function _mintBundle(
-        address[] memory to,
-        uint256[][] memory ids,
-        uint256[][] memory amounts,
-        bytes[] memory data
+        address[] calldata to,
+        uint256[][] calldata ids,
+        uint256[][] calldata amounts,
+        MintApprovalSignature[] calldata mintApprovalSignatures,
+        bytes[] calldata data
     ) internal virtual {
-        for (uint256 i = 0; i < to.length; i++) {
+        uint256 toLength = to.length;
+        for (uint256 i = 0; i < toLength; i++) {
             if (to[i].isContract()) {
                 _mintBatchToContract(to[i], ids[i], amounts[i], data[i]);
             } else {
-                (bytes32 r, bytes32 s, uint8 v) = splitSignature(data[i]);
-                _mintBatchToEOA(to[i], ids[i], amounts[i], v, r, s, data[i]);
+                MintApprovalSignature calldata signature = mintApprovalSignatures[i];
+                _mintBatchToEOA(
+                    to[i],
+                    ids[i],
+                    amounts[i],
+                    signature.v,
+                    signature.r,
+                    signature.s,
+                    signature.approvalExpiry,
+                    data[i]
+                );
             }
         }
     }
@@ -289,11 +308,12 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         uint256[] memory amounts,
         bytes memory data
     ) private {
-        require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
+        uint256 idsLength = ids.length;
+        require(idsLength == amounts.length, "ERC1238: ids and amounts length mismatch");
 
         address minter = msg.sender;
 
-        for (uint256 i = 0; i < ids.length; i++) {
+        for (uint256 i = 0; i < idsLength; i++) {
             _beforeMint(minter, to, ids[i], amounts[i], data);
 
             _balances[ids[i]][to] += amounts[i];
@@ -347,11 +367,13 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         uint256[] memory amounts
     ) internal virtual {
         require(from != address(0), "ERC1238: burn from the zero address");
-        require(ids.length == amounts.length, "ERC1238: ids and amounts length mismatch");
+
+        uint256 idsLength = ids.length;
+        require(idsLength == amounts.length, "ERC1238: ids and amounts length mismatch");
 
         address burner = msg.sender;
 
-        for (uint256 i = 0; i < ids.length; i++) {
+        for (uint256 i = 0; i < idsLength; i++) {
             uint256 id = ids[i];
             uint256 amount = amounts[i];
 
@@ -430,37 +452,5 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         } catch {
             revert("ERC1238: transfer to non ERC1238Receiver implementer");
         }
-    }
-
-    function splitSignature(bytes memory sig)
-        public
-        pure
-        returns (
-            bytes32 r,
-            bytes32 s,
-            uint8 v
-        )
-    {
-        require(sig.length == 65, "invalid signature length");
-
-        assembly {
-            /*
-            First 32 bytes stores the length of the signature
-
-            add(sig, 32) = pointer of sig + 32
-            effectively, skips first 32 bytes of signature
-
-            mload(p) loads next 32 bytes starting at the memory address p into memory
-            */
-
-            // first 32 bytes, after the length prefix
-            r := mload(add(sig, 32))
-            // second 32 bytes
-            s := mload(add(sig, 64))
-            // final byte (first byte of the next 32 bytes)
-            v := byte(0, mload(add(sig, 96)))
-        }
-
-        // implicitly return (r, s, v)
     }
 }
