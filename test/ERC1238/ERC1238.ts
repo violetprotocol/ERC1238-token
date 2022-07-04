@@ -177,7 +177,7 @@ describe("ERC1238", function () {
 
         await expect(
           erc1238Mock.connect(admin).mintToEOA(tokenRecipient.address, tokenId, mintAmount, v, r, s, expiredTime, data),
-        ).to.be.revertedWith("ERC1238: invalid approval expiry time");
+        ).to.be.revertedWith("ERC1238: provided approval expiry time cannot be in the past");
       });
 
       it("should revert with a signature already used before", async () => {
@@ -262,7 +262,7 @@ describe("ERC1238", function () {
           erc1238Mock
             .connect(admin)
             .mintBatchToEOA(tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts, v, r, s, expiredTime, data),
-        ).to.be.revertedWith("ERC1238: invalid approval expiry time");
+        ).to.be.revertedWith("ERC1238: provided approval expiry time cannot be in the past");
       });
 
       it("should revert with a signature already used before", async () => {

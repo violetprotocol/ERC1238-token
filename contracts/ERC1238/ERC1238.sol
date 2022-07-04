@@ -167,7 +167,7 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         uint256 approvalExpiry,
         bytes memory data
     ) internal virtual {
-        require(approvalExpiry >= block.timestamp, "ERC1238: invalid approval expiry time");
+        require(approvalExpiry >= block.timestamp, "ERC1238: provided approval expiry time cannot be in the past");
 
         bytes32 messageHash = _getMintApprovalMessageHash(to, id, amount, approvalExpiry);
         _verifyMintingApproval(to, messageHash, v, r, s);
@@ -220,7 +220,7 @@ contract ERC1238 is ERC165, IERC1238, ERC1238Approval {
         uint256 approvalExpiry,
         bytes memory data
     ) internal virtual {
-        require(approvalExpiry >= block.timestamp, "ERC1238: invalid approval expiry time");
+        require(approvalExpiry >= block.timestamp, "ERC1238: provided approval expiry time cannot be in the past");
 
         bytes32 messageHash = _getMintBatchApprovalMessageHash(to, ids, amounts, approvalExpiry);
         _verifyMintingApproval(to, messageHash, v, r, s);
