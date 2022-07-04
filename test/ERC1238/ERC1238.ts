@@ -7,7 +7,14 @@ import { chainIds } from "../../hardhat.config";
 import type { ERC1238Mock } from "../../src/types/ERC1238Mock";
 import type { ERC1238ReceiverMock } from "../../src/types/ERC1238ReceiverMock";
 import { getMintApprovalSignature, getMintBatchApprovalSignature } from "../../src/utils/ERC1238Approval";
-import { shouldSupportInterfaces, toBN, TOKEN_ID_ZERO, ZERO_ADDRESS } from "../utils/test-utils";
+import {
+  invalidSignatureS,
+  invalidSignatureV,
+  shouldSupportInterfaces,
+  toBN,
+  TOKEN_ID_ZERO,
+  ZERO_ADDRESS,
+} from "../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
 const twoDaysInSeconds = 172800;
@@ -119,10 +126,67 @@ describe("ERC1238", function () {
         }));
       });
 
-      it("should revert with an invalid signature", async () => {
+      it("should revert if the signer does not match the one in the approval message", async () => {
         await expect(
           erc1238Mock.connect(admin).mintToEOA(ZERO_ADDRESS, tokenId, mintAmount, v, r, s, approvalExpiry, data),
         ).to.be.revertedWith("ERC1238: Approval verification failed");
+      });
+
+      it("should revert with an invalid signature", async () => {
+        const bytes32Zero = "0x0000000000000000000000000000000000000000000000000000000000000000";
+        await expect(
+          erc1238Mock
+            .connect(admin)
+            .mintToEOA(ZERO_ADDRESS, tokenId, mintAmount, 27, bytes32Zero, bytes32Zero, approvalExpiry, data),
+        ).to.be.revertedWith("ECDSA: invalid signature");
+      });
+
+      it("should revert if signature v is invalid", async () => {
+        await expect(
+          erc1238Mock.mintToEOA(
+            tokenRecipient.address,
+            tokenId,
+            mintAmount,
+            invalidSignatureV,
+            r,
+            s,
+            approvalExpiry,
+            data,
+          ),
+        ).to.be.revertedWith("ECDSA: invalid signature 'v' value");
+      });
+
+      it("should revert if signature s is invalid", async () => {
+        await expect(
+          erc1238Mock.mintToEOA(
+            tokenRecipient.address,
+            tokenId,
+            mintAmount,
+            v,
+            r,
+            invalidSignatureS,
+            approvalExpiry,
+            data,
+          ),
+        ).to.be.revertedWith("ECDSA: invalid signature 's' value");
+      });
+
+      it("should revert with an expired signature", async () => {
+        // Approval expiry time in the past
+        const expiredTime = approvalExpiry.sub(twoDaysInSeconds);
+
+        await expect(
+          erc1238Mock.connect(admin).mintToEOA(tokenRecipient.address, tokenId, mintAmount, v, r, s, expiredTime, data),
+        ).to.be.revertedWith("ERC1238: invalid approval expiry time");
+      });
+
+      it("should revert with a signature already used before", async () => {
+        await expect(erc1238Mock.mintToEOA(tokenRecipient.address, tokenId, mintAmount, v, r, s, approvalExpiry, data))
+          .to.not.be.reverted;
+
+        await expect(
+          erc1238Mock.mintToEOA(tokenRecipient.address, tokenId, mintAmount, v, r, s, approvalExpiry, data),
+        ).to.be.revertedWith("ERC1238: Approval hash already used");
       });
 
       it("should credit the amount of tokens", async () => {
@@ -188,6 +252,49 @@ describe("ERC1238", function () {
             .connect(admin)
             .mintBatchToEOA(ZERO_ADDRESS, tokenBatchIds, mintBatchAmounts, v, r, s, approvalExpiry, data),
         ).to.be.revertedWith("ERC1238: Approval verification failed");
+      });
+
+      it("should revert with an expired signature", async () => {
+        // Approval expiry time in the past
+        const expiredTime = approvalExpiry.sub(twoDaysInSeconds);
+
+        await expect(
+          erc1238Mock
+            .connect(admin)
+            .mintBatchToEOA(tokenBatchRecipient.address, tokenBatchIds, mintBatchAmounts, v, r, s, expiredTime, data),
+        ).to.be.revertedWith("ERC1238: invalid approval expiry time");
+      });
+
+      it("should revert with a signature already used before", async () => {
+        await expect(
+          erc1238Mock
+            .connect(admin)
+            .mintBatchToEOA(
+              tokenBatchRecipient.address,
+              tokenBatchIds,
+              mintBatchAmounts,
+              v,
+              r,
+              s,
+              approvalExpiry,
+              data,
+            ),
+        ).to.not.be.reverted;
+
+        await expect(
+          erc1238Mock
+            .connect(admin)
+            .mintBatchToEOA(
+              tokenBatchRecipient.address,
+              tokenBatchIds,
+              mintBatchAmounts,
+              v,
+              r,
+              s,
+              approvalExpiry,
+              data,
+            ),
+        ).to.be.revertedWith("ERC1238: Approval hash already used");
       });
 
       it("should revert if the length of inputs do not match", async () => {
