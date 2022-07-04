@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
 struct EIP712Domain {
     string name;
     string version;
@@ -157,9 +159,9 @@ contract ERC1238Approval {
         // Prevent signatures from being replayed
         require(!hasApprovalHashBeenUsed[mintApprovalHash], "ERC1238: Approval hash already used");
 
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, mintApprovalHash));
+        bytes32 digest = ECDSA.toTypedDataHash(DOMAIN_SEPARATOR, mintApprovalHash);
 
-        require(ecrecover(digest, v, r, s) == recipient, "ERC1238: Approval verification failed");
+        require(ECDSA.recover(digest, v, r, s) == recipient, "ERC1238: Approval verification failed");
 
         hasApprovalHashBeenUsed[mintApprovalHash] = true;
     }
