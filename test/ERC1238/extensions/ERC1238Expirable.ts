@@ -18,13 +18,10 @@ describe("ERC1238Expirable", function () {
   let erc1238ExpirableMock: ERC1238ExpirableMock;
   let admin: SignerWithAddress;
   let contractRecipient: ERC1238ReceiverMock;
-  // let tokenBatchRecipient: SignerWithAddress;
 
   before(async function () {
     const signers: SignerWithAddress[] = await ethers.getSigners();
     admin = signers[0];
-    // tokenRecipient = signers[1];
-    // tokenBatchRecipient = signers[2];
   });
 
   beforeEach(async function () {
@@ -45,8 +42,6 @@ describe("ERC1238Expirable", function () {
 
     const tokenBatchIds = [toBN("2000"), toBN("2010"), toBN("2020")];
     const tokenBatchExpiryDates = [4110961215, 4110961216, 4110961217];
-    // const mintBatchAmounts = [toBN("5000"), toBN("10000"), toBN("42195")];
-    // const burnBatchAmounts = [toBN("5000"), toBN("9001"), toBN("195")];
 
     describe("_setExpiryDate", () => {
       it("should set the right expiry date", async () => {
