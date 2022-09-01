@@ -79,7 +79,7 @@ describe("ERC1238Expirable", function () {
     });
 
     describe("isExpired", () => {
-      it("should revert if the no expiry date was set", async () => {
+      it("should revert if no expiry date was set", async () => {
         await expect(erc1238ExpirableMock.isExpired(0)).to.be.revertedWith("ERC1238Expirable: No expiry date set");
       });
 
@@ -106,7 +106,7 @@ describe("ERC1238Expirable", function () {
     });
 
     describe("expiryDate", () => {
-      it("should revert if the no expiry date was set", async () => {
+      it("should revert if no expiry date was set", async () => {
         await expect(erc1238ExpirableMock.expiryDate(0)).to.be.revertedWith("ERC1238Expirable: No expiry date set");
       });
     });
