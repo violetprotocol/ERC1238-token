@@ -11,14 +11,6 @@ contract ERC1238ExpirableMock is ERC1238, ERC1238Expirable {
 
     constructor(string memory uri) ERC1238(uri) {}
 
-    function setExpiryDate(uint256 id, uint256 date) external {
-        _setExpiryDate(id, date);
-    }
-
-    function setBatchExpiryDates(uint256[] memory ids, uint256[] memory dates) external {
-        _setBatchExpiryDates(ids, dates);
-    }
-
     function mintToEOA(
         address to,
         uint256 id,

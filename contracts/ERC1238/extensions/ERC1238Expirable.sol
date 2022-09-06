@@ -52,4 +52,18 @@ abstract contract ERC1238Expirable is IERC1238Expirable, ERC1238 {
             _setExpiryDate(ids[i], dates[i]);
         }
     }
+
+    /**
+     * @dev Publicly expose {_setExpiryDate}.
+     */
+    function setExpiryDate(uint256 id, uint256 date) public {
+        _setExpiryDate(id, date);
+    }
+
+    /**
+     * @dev Publicly expose {_setBatchExpiryDates}.
+     */
+    function setBatchExpiryDates(uint256[] memory ids, uint256[] memory dates) public {
+        _setBatchExpiryDates(ids, dates);
+    }
 }

@@ -17,4 +17,14 @@ interface IERC1238Expirable is IERC1238 {
      * @dev Returns whether tokens are expired by comparing their expiry date with `block.timestamp`.
      */
     function isExpired(uint256 id) external view returns (bool);
+
+    /**
+     * @dev Sets the expiry date for the tokens with id `id`.
+     */
+    function setExpiryDate(uint256 id, uint256 date) external;
+
+    /**
+     * @dev [Batched] version of {setExpiryDate}.
+     */
+    function setBatchExpiryDates(uint256[] memory ids, uint256[] memory dates) external;
 }

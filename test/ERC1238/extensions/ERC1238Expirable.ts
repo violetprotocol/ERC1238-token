@@ -34,7 +34,7 @@ describe("ERC1238Expirable", function () {
     contractRecipient = <ERC1238ReceiverMock>await waffle.deployContract(admin, ERC1238ReceiverMockArtifact);
   });
 
-  describe("internal functions", () => {
+  describe("Expirable extension", () => {
     const data = "0x12345678";
     const tokenId = toBN("11223344");
     const tokenExpiryDate = 4110961214;
@@ -43,7 +43,7 @@ describe("ERC1238Expirable", function () {
     const tokenBatchIds = [toBN("2000"), toBN("2010"), toBN("2020")];
     const tokenBatchExpiryDates = [4110961215, 4110961216, 4110961217];
 
-    describe("_setExpiryDate", () => {
+    describe("setExpiryDate", () => {
       it("should set the right expiry date", async () => {
         await erc1238ExpirableMock.setExpiryDate(tokenId, tokenExpiryDate);
 
@@ -57,7 +57,7 @@ describe("ERC1238Expirable", function () {
       });
     });
 
-    describe("_setBatchExpiryDates", () => {
+    describe("setBatchExpiryDates", () => {
       it("should set the right expiry dates", async () => {
         await erc1238ExpirableMock.setBatchExpiryDates(tokenBatchIds, tokenBatchExpiryDates);
 
@@ -103,6 +103,12 @@ describe("ERC1238Expirable", function () {
     describe("expiryDate", () => {
       it("should revert if no expiry date was set", async () => {
         await expect(erc1238ExpirableMock.expiryDate(0)).to.be.revertedWith("ERC1238Expirable: No expiry date set");
+      });
+
+      it("should return the right expiry date", async () => {
+        await erc1238ExpirableMock.setExpiryDate(tokenId, tokenExpiryDate);
+
+        expect(await erc1238ExpirableMock.expiryDate(tokenId)).to.eq(tokenExpiryDate);
       });
     });
 
