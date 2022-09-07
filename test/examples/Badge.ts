@@ -173,12 +173,10 @@ describe("Badge", function () {
     const tokenAmount = toBN("2");
     const tokenURI = "https://your-domain-name.com/credentials/tokens/1";
     const tokenId = toBN("1234");
+    const burnAmount = toBN("1");
     let v: number, r: string, s: string;
 
-    const burnAmount = toBN("1");
     beforeEach(async () => {
-      // tokenId = tokenId.add(1);
-
       ({ v, r, s } = await getMintApprovalSignature({
         erc1238ContractAddress: badge.address,
         chainId,
