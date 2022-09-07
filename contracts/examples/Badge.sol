@@ -17,6 +17,11 @@ contract Badge is ERC1238, ERC1238URIStorage {
         _;
     }
 
+    modifier onlyContractOwnerOrTokenOwner(address tokenOwner) {
+        require(msg.sender == owner || msg.sender == tokenOwner, "Unauthorized: sender is not the owner");
+        _;
+    }
+
     function supportsInterface(bytes4 interfaceId)
         public
         view
@@ -98,7 +103,7 @@ contract Badge is ERC1238, ERC1238URIStorage {
         uint256 id,
         uint256 amount,
         bool deleteURI
-    ) external onlyOwner {
+    ) external onlyContractOwnerOrTokenOwner(from) {
         if (deleteURI) {
             _burnAndDeleteURI(from, id, amount);
         } else {
@@ -111,7 +116,7 @@ contract Badge is ERC1238, ERC1238URIStorage {
         uint256[] calldata ids,
         uint256[] calldata amounts,
         bool deleteURI
-    ) external onlyOwner {
+    ) external onlyContractOwnerOrTokenOwner(from) {
         if (deleteURI) {
             _burnBatchAndDeleteURIs(from, ids, amounts);
         } else {

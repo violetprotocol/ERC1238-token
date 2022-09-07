@@ -6,7 +6,7 @@ import type { Artifact } from "hardhat/types";
 import { chainIds } from "../../hardhat.config";
 import type { Badge } from "../../src/types/Badge";
 import { ERC1238ReceiverMock } from "../../src/types/ERC1238ReceiverMock";
-import { getMintBatchApprovalSignature } from "../../src/utils/ERC1238Approval";
+import { getMintApprovalSignature, getMintBatchApprovalSignature } from "../../src/utils/ERC1238Approval";
 import { toBN } from "../utils/test-utils";
 
 const BASE_URI = "https://token-cdn-domain/{id}.json";
@@ -166,6 +166,65 @@ describe("Badge", function () {
       await expect(tx).to.emit(badge, "MintBatch").withArgs(admin.address, to[0], ids[0], amounts[0]);
       await expect(tx).to.emit(badge, "MintBatch").withArgs(admin.address, to[1], ids[1], amounts[1]);
       await expect(tx).to.emit(badge, "MintBatch").withArgs(admin.address, to[2], ids[2], amounts[2]);
+    });
+  });
+
+  describe("Single Burn", () => {
+    const tokenAmount = toBN("2");
+    const tokenURI = "https://your-domain-name.com/credentials/tokens/1";
+    const tokenId = toBN("1234");
+    const burnAmount = toBN("1");
+    let v: number, r: string, s: string;
+
+    beforeEach(async () => {
+      ({ v, r, s } = await getMintApprovalSignature({
+        erc1238ContractAddress: badge.address,
+        chainId,
+        signer: eoaRecipient,
+        id: tokenId,
+        amount: tokenAmount,
+        approvalExpiry,
+      }));
+
+      await badge
+        .connect(admin)
+        .mintToEOA(eoaRecipient.address, tokenId, tokenAmount, v, r, s, approvalExpiry, tokenURI, []);
+    });
+
+    it("should let a token owner burn their tokens", async () => {
+      await badge.connect(eoaRecipient).burn(eoaRecipient.address, tokenId, burnAmount, false);
+
+      expect(await badge.balanceOf(eoaRecipient.address, tokenId)).to.eq(tokenAmount.sub(burnAmount));
+    });
+
+    it("should let a token owner burn their tokens and delete the URI", async () => {
+      expect(await badge.tokenURI(tokenId)).to.eq(tokenURI);
+
+      await badge.connect(eoaRecipient).burn(eoaRecipient.address, tokenId, burnAmount, true);
+
+      expect(await badge.balanceOf(eoaRecipient.address, tokenId)).to.eq(tokenAmount.sub(burnAmount));
+      expect(await badge.tokenURI(tokenId)).to.eq(BASE_URI);
+    });
+
+    it("should let the token issuer burn a token", async () => {
+      await badge.connect(admin).burn(eoaRecipient.address, tokenId, burnAmount, false);
+
+      expect(await badge.balanceOf(eoaRecipient.address, tokenId)).to.eq(tokenAmount.sub(burnAmount));
+    });
+
+    it("should let the token issuer burn a token and delete the URI", async () => {
+      expect(await badge.tokenURI(tokenId)).to.eq(tokenURI);
+
+      await badge.connect(admin).burn(eoaRecipient.address, tokenId, burnAmount, true);
+
+      expect(await badge.balanceOf(eoaRecipient.address, tokenId)).to.eq(tokenAmount.sub(burnAmount));
+      expect(await badge.tokenURI(tokenId)).to.eq(BASE_URI);
+    });
+
+    it("should not let an unauthorized address burn", async () => {
+      await expect(badge.connect(signer1).burn(eoaRecipient.address, tokenId, burnAmount, false)).to.be.revertedWith(
+        "Unauthorized: sender is not the owner",
+      );
     });
   });
 });
