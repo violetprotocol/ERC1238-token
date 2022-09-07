@@ -55,6 +55,14 @@ describe("ERC1238Expirable", function () {
           "ERC1238Expirable: Expiry date cannot be in the past",
         );
       });
+
+      it("should revert when trying to set an expiry date which is earlier than the currently set date", async () => {
+        await erc1238ExpirableMock.setExpiryDate(tokenId, tokenExpiryDate);
+
+        await expect(erc1238ExpirableMock.setExpiryDate(tokenId, tokenExpiryDate - 100)).to.be.revertedWith(
+          "ERC1238Expirable: Expiry date can only be extended",
+        );
+      });
     });
 
     describe("setBatchExpiryDates", () => {
@@ -70,6 +78,16 @@ describe("ERC1238Expirable", function () {
         await expect(
           erc1238ExpirableMock.setBatchExpiryDates(tokenBatchIds, tokenBatchExpiryDates.slice(1)),
         ).to.be.revertedWith("ERC1238Expirable: Ids and token URIs length mismatch");
+      });
+
+      it("should revert if a date shortens the expiry", async () => {
+        await erc1238ExpirableMock.setBatchExpiryDates(tokenBatchIds, tokenBatchExpiryDates);
+
+        const newDates = [tokenBatchExpiryDates[0] - 1, ...tokenBatchExpiryDates.slice(1)];
+
+        await expect(erc1238ExpirableMock.setBatchExpiryDates(tokenBatchIds, newDates)).to.be.revertedWith(
+          "ERC1238Expirable: Expiry date can only be extended",
+        );
       });
     });
 

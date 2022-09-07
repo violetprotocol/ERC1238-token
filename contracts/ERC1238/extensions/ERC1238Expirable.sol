@@ -35,9 +35,12 @@ abstract contract ERC1238Expirable is IERC1238Expirable, ERC1238 {
 
     /**
      * @dev Sets the expiry date for the tokens with id `id`.
+     * Requirements:
+     * - The new date must be after the current expiry date.
      */
     function _setExpiryDate(uint256 id, uint256 date) internal virtual {
         require(date > block.timestamp, "ERC1238Expirable: Expiry date cannot be in the past");
+        require(date > _expiryDate[id], "ERC1238Expirable: Expiry date can only be extended");
 
         _expiryDate[id] = date;
     }
