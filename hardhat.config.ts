@@ -7,6 +7,7 @@ import { NetworkUserConfig } from "hardhat/types";
 import { resolve } from "path";
 import "solidity-coverage";
 import "./tasks/accounts";
+import "@nomiclabs/hardhat-etherscan";
 
 dotenvConfig({ path: resolve(__dirname, "./.env") });
 
@@ -17,6 +18,8 @@ export const chainIds = {
   mainnet: 1,
   rinkeby: 4,
   ropsten: 3,
+  "polygon-mumbai": 80001,
+  "polygon-mainnet": 137,
 };
 
 // Ensure that we have all the environment variables we need.
@@ -43,7 +46,7 @@ function getChainConfig(network: keyof typeof chainIds): NetworkUserConfig {
   };
 }
 
-const config: HardhatUserConfig = {
+const config = {
   defaultNetwork: "hardhat",
   gasReporter: {
     currency: "USD",
@@ -62,6 +65,13 @@ const config: HardhatUserConfig = {
     kovan: getChainConfig("kovan"),
     rinkeby: getChainConfig("rinkeby"),
     ropsten: getChainConfig("ropsten"),
+    mumbai: getChainConfig("polygon-mumbai"),
+    polygon: getChainConfig("polygon-mainnet"),
+  },
+  etherscan: {
+    apiKey: {
+      polygonMumbai: process.env.POLYGONSCAN_API_KEY,
+    },
   },
   paths: {
     artifacts: "./artifacts",

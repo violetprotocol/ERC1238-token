@@ -109,3 +109,7 @@ Where of course `v0.8.4+commit.c7e474f2` can be replaced with any other version.
 ## Credits
 
 - Setup used: [Solidity-template](https://github.com/paulrberg/solidity-template)
+
+## Verifying Contracts
+
+Must include contract address (deployed from Hardhat project) and constructor args: `hh verify --network mumbai 0x2236952cE37bEb458434F9daaa16D388750FAAd4 0x0e21c1982BeeEF2e25A9D4d51baeaB686207Afcf QmZ8U6ZfhbCpsfHK7MscsnYUEdQ2T4xmgHs1sX4gA4ZB4K`
